@@ -1,0 +1,23 @@
+# Local secrets — never commit
+aegis_secrets.py
+
+# Auto-generated runtime files
+aegis_events.txt
+aegis_signals.csv
+aegis_trades.csv
+aegis_ai_briefs.txt
+aegis_ai_log.json
+aegis_bot_*.log
+
+# Backtest output
+aegis_backtest_report.txt
+aegis_backtest_trades.csv
+aegis_backtest_v2_report.txt
+aegis_backtest_v2_trades.csv
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Misc
+New folder/

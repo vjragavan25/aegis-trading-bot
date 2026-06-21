@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aegis — Trade Journal</title>
+<style>
+  :root {
+    --bg:#0a0b0f;--bg2:#10131a;--bg3:#161b26;--bg4:#1c2333;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+    --text:#e8eaf0;--text2:#8b90a0;--text3:#555a6a;
+    --green:#22c55e;--red:#ef4444;--amber:#f59e0b;
+    --accent:#4f8fff;--teal:#14b8a6;--purple:#a855f7;
+    --mono:'Courier New',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',sans-serif;font-size:13px;padding:0;}
+  .topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:10;}
+  .logo{font-size:15px;font-weight:700;letter-spacing:-0.3px;}
+  .logo span{color:var(--accent);}
+  .tag{font-size:10px;padding:2px 10px;border-radius:20px;font-weight:700;}
+  .tag.demo{background:rgba(245,158,11,0.12);color:var(--amber);border:1px solid rgba(245,158,11,0.3);}
+  .tag.live{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.25);}
+  .tag.offline{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);transition:all 0.15s;}
+  .btn:hover{background:var(--bg3);color:var(--text);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .btn.primary:hover{background:#3b6fdb;}
+
+  .main{padding:24px;max-width:1200px;margin:0 auto;}
+
+  /* STATS */
+  .stats-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}
+  .stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;}
+  .stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;}
+  .stat-val{font-size:20px;font-weight:800;font-family:var(--mono);}
+  .stat-sub{font-size:11px;color:var(--text2);margin-top:3px;}
+  .up{color:var(--green);} .dn{color:var(--red);} .nt{color:var(--text2);}
+
+  /* TABS */
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:20px;}
+  .tab{padding:8px 16px;font-size:12px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.12s;}
+  .tab:hover{color:var(--text2);}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+
+  /* TABLE */
+  .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border);}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:var(--bg3);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;padding:10px 12px;text-align:left;font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap;}
+  td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:var(--bg3);}
+
+  /* BADGES */
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;}
+  .badge.buy{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+  .badge.sell{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+  .badge.open{background:rgba(79,143,255,0.1);color:var(--accent);border:1px solid rgba(79,143,255,0.2);}
+  .badge.win{background:rgba(34,197,94,0.12);color:var(--green);}
+  .badge.loss{background:rgba(239,68,68,0.1);color:var(--red);}
+  .badge.pending{background:rgba(245,158,11,0.1);color:var(--amber);}
+
+  /* SCORE BAR */
+  .sbar{height:4px;border-radius:2px;margin-top:3px;}
+
+  /* ALERT */
+  .alert{border-radius:10px;padding:12px 16px;font-size:13px;line-height:1.6;margin-bottom:16px;display:flex;gap:10px;}
+  .alert.info{background:rgba(79,143,255,0.07);border:1px solid rgba(79,143,255,0.2);color:#93b8ff;}
+  .alert.warn{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);color:#fcd34d;}
+  .alert.ok{background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);color:#4ade80;}
+
+  /* EQUITY CURVE */
+  canvas{width:100%;border-radius:10px;}
+  .chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;}
+  .chart-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);margin-bottom:12px;}
+
+  /* EMPTY STATE */
+  .empty{text-align:center;padding:48px;color:var(--text3);}
+  .empty-icon{font-size:32px;margin-bottom:12px;}
+  .empty-title{font-size:14px;color:var(--text2);margin-bottom:6px;}
+  .empty-sub{font-size:12px;line-height:1.7;}
+
+  /* SIGNAL TABLE specific */
+  .regime-bull{color:var(--green);font-weight:600;}
+  .regime-bear{color:var(--red);font-weight:600;}
+  .regime-side{color:var(--amber);}
+  .verdict-trade{color:var(--green);font-weight:700;}
+  .verdict-wait{color:var(--text3);}
+
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+  .hidden{display:none!important;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">⬡ <span>Aegis</span> · Trade Journal</div>
+  <span class="tag demo" id="server-tag">● Connecting...</span>
+  <span style="font-size:11px;color:var(--text3)" id="last-update">—</span>
+  <div class="topbar-right">
+    <button class="btn" onclick="loadAll()">↺ Refresh</button>
+    <button class="btn" onclick="downloadCSV('trades')">↓ Export Trades</button>
+    <button class="btn" onclick="downloadCSV('signals')">↓ Export Signals</button>
+    <button class="btn primary" id="cb-btn" onclick="resetCB()" style="display:none">Reset Circuit Breaker</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- SUMMARY STATS -->
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat"><div class="stat-label">Total Trades</div><div class="stat-val nt" id="s-total">—</div><div class="stat-sub">All time</div></div>
+    <div class="stat"><div class="stat-label">Win Rate</div><div class="stat-val" id="s-wr">—</div><div class="stat-sub" id="s-wl">—</div></div>
+    <div class="stat"><div class="stat-label">Total PnL</div><div class="stat-val" id="s-pnl">—</div><div class="stat-sub">USDT</div></div>
+    <div class="stat"><div class="stat-label">Avg R:R</div><div class="stat-val" id="s-rr">—</div><div class="stat-sub">Achieved</div></div>
+    <div class="stat"><div class="stat-label">Open Trades</div><div class="stat-val" id="s-open">—</div><div class="stat-sub" id="s-today">—</div></div>
+    <div class="stat"><div class="stat-label">Circuit Breaker</div><div class="stat-val" id="s-cb">—</div><div class="stat-sub" id="s-cb-sub">—</div></div>
+  </div>
+
+  <!-- ALERTS -->
+  <div id="alerts-area"></div>
+
+  <!-- EQUITY CURVE -->
+  <div class="chart-wrap" id="equity-wrap" style="display:none">
+    <div class="chart-title">Equity curve — cumulative PnL (USDT)</div>
+    <canvas id="equity-canvas" height="120"></canvas>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('trades',this)">Trade Log</div>
+    <div class="tab" onclick="switchTab('open',this)">Open Positions</div>
+    <div class="tab" onclick="switchTab('signals',this)">Signal History</div>
+    <div class="tab" onclick="switchTab('events',this)">Event Log</div>
+  </div>
+
+  <!-- TRADE LOG TAB -->
+  <div id="tab-trades">
+    <div id="trades-content"></div>
+  </div>
+
+  <!-- OPEN POSITIONS TAB -->
+  <div id="tab-open" class="hidden">
+    <div id="open-content"></div>
+  </div>
+
+  <!-- SIGNALS TAB -->
+  <div id="tab-signals" class="hidden">
+    <div id="signals-content"></div>
+  </div>
+
+  <!-- EVENTS TAB -->
+  <div id="tab-events" class="hidden">
+    <div id="events-content"></div>
+  </div>
+
+</div>
+
+<script>
+const SERVER = 'http://localhost:8888';
+let allTrades = [], allSignals = [], openPositions = [], eventLog = [];
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['trades','open','signals','events'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('hidden', t!==name);
+  });
+}
+
+async function fetchJSON(url) {
+  try {
+    const r = await fetch(url);
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+async function fetchCSV(url) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return [];
+    const text = await r.text();
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',');
+    return lines.slice(1).map(line => {
+      const vals = line.split(',');
+      return Object.fromEntries(headers.map((h,i) => [h.trim(), (vals[i]||'').trim()]));
+    });
+  } catch(e) { return []; }
+}
+
+function scoreColor(v) {
+  v = parseInt(v);
+  return v >= 66 ? '#22c55e' : v >= 48 ? '#f59e0b' : '#ef4444';
+}
+
+function pnlColor(v) {
+  v = parseFloat(v);
+  return v > 0 ? 'var(--green)' : v < 0 ? 'var(--red)' : 'var(--text2)';
+}
+
+async function loadAll() {
+  // Status
+  const status = await fetchJSON(SERVER + '/status');
+  if (status) {
+    const tag = document.getElementById('server-tag');
+    tag.textContent = '● Server running';
+    tag.className = 'tag live';
+    document.getElementById('s-open').textContent = status.open_positions;
+    document.getElementById('s-today').textContent = `${status.trades_today} today`;
+    const cbEl = document.getElementById('s-cb');
+    cbEl.textContent = status.circuit_breaker ? 'ACTIVE' : 'Clear';
+    cbEl.className = 'stat-val ' + (status.circuit_breaker ? 'dn' : 'up');
+    document.getElementById('s-cb-sub').textContent = status.circuit_breaker ? status.cb_reason : 'All systems go';
+    document.getElementById('cb-btn').style.display = status.circuit_breaker ? 'block' : 'none';
+
+    // Alerts
+    const alerts = [];
+    if (status.circuit_breaker) alerts.push(`<div class="alert warn">⚠ Circuit breaker is ACTIVE: ${status.cb_reason}. Bot is not trading. Click "Reset Circuit Breaker" when ready.</div>`);
+    if (status.trades_today >= 8) alerts.push(`<div class="alert warn">⚠ ${status.trades_today}/10 trades used today. Approaching daily limit.</div>`);
+    document.getElementById('alerts-area').innerHTML = alerts.join('');
+  } else {
+    const tag = document.getElementById('server-tag');
+    tag.textContent = '● Server offline';
+    tag.className = 'tag offline';
+    document.getElementById('alerts-area').innerHTML = '<div class="alert warn">⚠ Cannot connect to Aegis server on localhost:8888. Make sure aegis_server.py is running.</div>';
+  }
+
+  // Trades — use JSON endpoint (avoids CORS/CSV issues)
+  const tradesData = await fetchJSON(SERVER + '/tradesdata');
+  allTrades = tradesData?.trades || [];
+  renderTrades();
+
+  // Open positions from server
+  const posData = await fetchJSON(SERVER + '/positions');
+  openPositions = posData?.positions || [];
+  renderOpen();
+
+  // Signals — use JSON endpoint
+  const signalsData = await fetchJSON(SERVER + '/signalsdata');
+  allSignals = signalsData?.signals || [];
+  renderSignals();
+
+  // Events
+  const evData = await fetchJSON(SERVER + '/trades');
+  eventLog = evData?.trades || [];
+  renderEvents();
+
+  // Update stats
+  updateStats();
+  drawEquity();
+
+  document.getElementById('last-update').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+function updateStats() {
+  const closed = allTrades.filter(t => t.status === 'closed' || t.exit_price);
+  const wins = closed.filter(t => parseFloat(t.pnl_usdt) > 0);
+  const totalPnl = closed.reduce((s,t) => s + (parseFloat(t.pnl_usdt)||0), 0);
+  const avgRR = closed.length > 0
+    ? closed.reduce((s,t) => s + (parseFloat(t.rr_achieved)||0), 0) / closed.length
+    : 0;
+
+  document.getElementById('s-total').textContent = allTrades.length || '0';
+  const wrEl = document.getElementById('s-wr');
+  const wr = closed.length > 0 ? Math.round((wins.length/closed.length)*100) : 0;
+  wrEl.textContent = closed.length > 0 ? wr + '%' : '—';
+  wrEl.className = 'stat-val ' + (wr >= 55 ? 'up' : wr >= 45 ? 'nt' : 'dn');
+  document.getElementById('s-wl').textContent = closed.length > 0 ? `${wins.length}W / ${closed.length-wins.length}L` : 'No closed trades yet';
+
+  const pnlEl = document.getElementById('s-pnl');
+  pnlEl.textContent = closed.length > 0 ? (totalPnl >= 0 ? '+' : '') + totalPnl.toFixed(2) : '—';
+  pnlEl.style.color = totalPnl > 0 ? 'var(--green)' : totalPnl < 0 ? 'var(--red)' : 'var(--text2)';
+
+  const rrEl = document.getElementById('s-rr');
+  rrEl.textContent = avgRR > 0 ? avgRR.toFixed(2) + ':1' : '—';
+  rrEl.className = 'stat-val ' + (avgRR >= 2 ? 'up' : avgRR >= 1 ? 'nt' : 'dn');
+}
+
+function drawEquity() {
+  const closed = allTrades.filter(t => t.exit_price && t.pnl_usdt);
+  if (closed.length < 2) { document.getElementById('equity-wrap').style.display='none'; return; }
+  document.getElementById('equity-wrap').style.display='block';
+  const canvas = document.getElementById('equity-canvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.offsetWidth; canvas.width = w; canvas.height = 120;
+  let cum = 0;
+  const pts = closed.map(t => { cum += parseFloat(t.pnl_usdt)||0; return cum; });
+  const min = Math.min(0, ...pts), max = Math.max(...pts);
+  const range = max - min || 1;
+  const sx = i => (i/(pts.length-1))*w;
+  const sy = v => 110 - ((v-min)/range)*90;
+  const isProfit = pts[pts.length-1] >= 0;
+  const lineColor = isProfit ? '#22c55e' : '#ef4444';
+  const grad = ctx.createLinearGradient(0,0,0,120);
+  grad.addColorStop(0, isProfit ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.moveTo(sx(0),sy(pts[0]));
+  pts.forEach((p,i) => { if(i>0) ctx.lineTo(sx(i),sy(p)); });
+  ctx.lineTo(w,120); ctx.lineTo(0,120); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(sx(0),sy(pts[0]));
+  pts.forEach((p,i) => { if(i>0) ctx.lineTo(sx(i),sy(p)); });
+  ctx.strokeStyle=lineColor; ctx.lineWidth=2; ctx.stroke();
+  // zero line
+  if (min < 0 && max > 0) {
+    ctx.setLineDash([4,3]); ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,sy(0)); ctx.lineTo(w,sy(0)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function renderTrades() {
+  const el = document.getElementById('trades-content');
+  if (!allTrades.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">No trades logged yet</div>
+      <div class="empty-sub">When the bot places its first trade, it will appear here automatically.<br>
+      The bot scans every 15 minutes — check back after the next cycle.</div>
+    </div>`; return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Date/Time</th><th>Symbol</th><th>Side</th><th>Entry</th><th>Stop</th>
+      <th>Target</th><th>Exit</th><th>PnL</th><th>R:R</th>
+      <th>Opp</th><th>Conf</th><th>Risk</th><th>Regime</th><th>Status</th>
+    </tr></thead>
+    <tbody>${allTrades.map(t => {
+      const isWin = parseFloat(t.pnl_usdt) > 0;
+      const isClosed = t.exit_price && t.exit_price !== '';
+      return `<tr>
+        <td style="font-family:var(--mono);color:var(--text3);white-space:nowrap">${t.date} ${t.time}</td>
+        <td style="font-weight:700;color:var(--text)">${t.symbol}</td>
+        <td><span class="badge ${t.side?.toLowerCase()}">${t.side}</span></td>
+        <td style="font-family:var(--mono)">$${parseFloat(t.entry||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td style="font-family:var(--mono);color:var(--red)">$${parseFloat(t.stop||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td style="font-family:var(--mono);color:var(--green)">$${parseFloat(t.target||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td style="font-family:var(--mono);color:var(--text2)">${t.exit_price ? '$'+parseFloat(t.exit_price).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : '—'}</td>
+        <td style="font-family:var(--mono);font-weight:700;color:${isClosed?pnlColor(t.pnl_usdt):'var(--text3)'}">${isClosed?(parseFloat(t.pnl_usdt)>0?'+':'')+parseFloat(t.pnl_usdt).toFixed(2):'Open'}</td>
+        <td style="font-family:var(--mono);color:var(--text2)">${t.rr_achieved ? t.rr_achieved+':1' : '—'}</td>
+        <td><span style="color:${scoreColor(t.opp_score)};font-family:var(--mono);font-weight:700">${t.opp_score}</span></td>
+        <td><span style="color:${scoreColor(t.conf_score)};font-family:var(--mono)">${t.conf_score}</span></td>
+        <td><span style="color:${scoreColor(100-parseInt(t.risk_score||50))};font-family:var(--mono)">${t.risk_score}</span></td>
+        <td style="color:${t.regime?.includes('bull')||t.regime?.includes('Bull')?'var(--green)':t.regime?.includes('Bear')?'var(--red)':'var(--amber)'}">${t.regime||'—'}</td>
+        <td><span class="badge ${isClosed?(isWin?'win':'loss'):'open'}">${isClosed?(isWin?'Win':'Loss'):'Open'}</span></td>
+      </tr>`;
+    }).join('')}
+    </tbody></table></div>`;
+}
+
+function renderOpen() {
+  const el = document.getElementById('open-content');
+  if (!openPositions.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">⏳</div>
+      <div class="empty-title">No open positions</div>
+      <div class="empty-sub">The bot is scanning the market every 15 minutes.<br>An open position will appear here when a trade is placed.</div>
+    </div>`; return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Symbol</th><th>Side</th><th>Qty</th><th>Entry</th><th>Stop</th><th>Target</th><th>Opp</th><th>Conf</th><th>Time</th></tr></thead>
+    <tbody>${openPositions.map(p => `<tr>
+      <td style="font-weight:700;color:var(--text)">${p.symbol}</td>
+      <td><span class="badge ${p.side?.toLowerCase()}">${p.side}</span></td>
+      <td style="font-family:var(--mono)">${p.qty}</td>
+      <td style="font-family:var(--mono)">$${parseFloat(p.entry||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="font-family:var(--mono);color:var(--red)">$${parseFloat(p.stop||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="font-family:var(--mono);color:var(--green)">$${parseFloat(p.target||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="color:${scoreColor(p.opp_score)};font-family:var(--mono);font-weight:700">${p.opp_score}</td>
+      <td style="color:${scoreColor(p.conf_score)};font-family:var(--mono)">${p.conf_score}</td>
+      <td style="font-family:var(--mono);color:var(--text3)">${p.time?.split('T')[1]?.substring(0,8)||'—'}</td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function renderSignals() {
+  const el = document.getElementById('signals-content');
+  if (!allSignals.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">📡</div>
+      <div class="empty-title">No signals logged yet</div>
+      <div class="empty-sub">Every market scan is recorded here — including WAIT decisions.<br>
+      After the first 15-minute cycle completes, signal history will appear.</div>
+    </div>`; return;
+  }
+  const tradeSignals = allSignals.filter(s => s.verdict === 'TRADE');
+  el.innerHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:12px">
+        Total scans: <strong style="color:var(--text)">${allSignals.length}</strong>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:12px">
+        Trade signals fired: <strong style="color:var(--green)">${tradeSignals.length}</strong>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:12px">
+        Wait decisions: <strong style="color:var(--amber)">${allSignals.length - tradeSignals.length}</strong>
+      </div>
+    </div>
+    <div class="table-wrap"><table>
+    <thead><tr><th>Date/Time</th><th>Symbol</th><th>Price</th><th>24h%</th><th>Opp</th><th>Conf</th><th>Risk</th><th>Vol</th><th>TF</th><th>Regime</th><th>Decision</th><th>Why failed</th></tr></thead>
+    <tbody>${[...allSignals].reverse().slice(0,200).map(s => `<tr>
+      <td style="font-family:var(--mono);color:var(--text3);white-space:nowrap">${s.datetime}</td>
+      <td style="font-weight:700;color:var(--text)">${s.symbol}</td>
+      <td style="font-family:var(--mono)">$${parseFloat(s.price||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="font-family:var(--mono);color:${parseFloat(s.pct_24h)>0?'var(--green)':'var(--red)'}">${parseFloat(s.pct_24h||0)>0?'+':''}${parseFloat(s.pct_24h||0).toFixed(2)}%</td>
+      <td style="color:${scoreColor(s.opp_score)};font-family:var(--mono);font-weight:700">${s.opp_score}</td>
+      <td style="color:${scoreColor(s.conf_score)};font-family:var(--mono)">${s.conf_score}</td>
+      <td style="color:${scoreColor(100-parseInt(s.risk_score||50))};font-family:var(--mono)">${s.risk_score}</td>
+      <td style="font-family:var(--mono);color:${parseFloat(s.volume_ratio)>=1.2?'var(--green)':parseFloat(s.volume_ratio)>=0.8?'var(--amber)':'var(--red)'}">${parseFloat(s.volume_ratio||0).toFixed(2)}×</td>
+      <td style="font-family:var(--mono);color:${parseInt(s.tf_bullish)>=2?'var(--green)':'var(--amber)'}">${s.tf_bullish}/3</td>
+      <td class="${s.regime?.includes('bull')||s.regime?.includes('Bull')?'regime-bull':s.regime?.includes('Bear')?'regime-bear':'regime-side'}">${s.regime||'—'}</td>
+      <td class="${s.verdict==='TRADE'?'verdict-trade':'verdict-wait'}" style="font-weight:700">${s.verdict}</td>
+      <td style="font-size:11px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.reasons}">${s.reasons||'—'}</td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function renderEvents() {
+  const el = document.getElementById('events-content');
+  if (!eventLog.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><div class="empty-title">No events yet</div><div class="empty-sub">Server activity will appear here.</div></div>`;
+    return;
+  }
+  const colors = {INFO:'var(--text2)',OK:'var(--green)',WARN:'var(--amber)',ERR:'var(--red)',TRADE:'var(--teal)'};
+  el.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;font-family:var(--mono);font-size:11px;line-height:2;max-height:500px;overflow-y:auto">
+    ${[...eventLog].reverse().map(e => `<div>
+      <span style="color:var(--text3)">[${e.ts}]</span>
+      <span style="color:${colors[e.level]||'var(--text2)'}"> ${e.msg}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+function downloadCSV(type) {
+  const url = SERVER + (type==='trades' ? '/tradelog' : '/signallog');
+  window.open(url, '_blank');
+}
+
+async function resetCB() {
+  const r = await fetchJSON(SERVER + '/reset');
+  if (r) { alert(r.message); loadAll(); }
+}
+
+// Auto-refresh every 60 seconds
+loadAll();
+setInterval(loadAll, 60000);
+</script>
+</body>
+</html>

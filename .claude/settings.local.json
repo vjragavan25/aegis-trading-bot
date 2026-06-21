@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(winget install *)",
+      "PowerShell(git *)",
+      "PowerShell(gh *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:8888/balance\" | ConvertTo-Json -Depth 5)",
+      "PowerShell(git push *)",
+      "PowerShell($env:PATH += \";C:\\\\Program Files\\\\Git\\\\cmd\"; cd \"C:\\\\Users\\\\Vijay\\\\Downloads\\\\AI Analyst\\\\Run\"; git remote -v)"
+    ]
+  }
+}

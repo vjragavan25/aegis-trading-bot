@@ -1,0 +1,44 @@
+AEGIS WEEKLY REVIEWS
+====================
+30-minute structured review every Sunday.
+Agenda defined in AEGIS_PSYCHOLOGY_PROTOCOL.md (Rule 4).
+Format: date, then three parts (Trade Outcomes / Signal Quality / System Health),
+then one-paragraph summary note. Keep it honest, keep it brief.
+
+Do NOT skip weeks even if nothing traded. "Nothing traded, market bearish,
+system held correctly" is a valid and useful entry.
+
+====================================================================================
+REVIEW #1 — [DATE] UTC
+====================================================================================
+
+PART 1 — TRADE OUTCOMES (10 min)
+----------------------------------
+Trades this week        :
+OCO-driven exits        :
+Manual closes           :
+Rolling win rate        : (last 10 OCO-driven trades only)
+Gate metrics status     : Opp/Conf/Risk/Vol all within expected range? Y/N
+
+PART 2 — SIGNAL QUALITY (10 min)
+----------------------------------
+TRADE signals fired     :
+WAIT signals fired      :
+Most common WAIT reason :
+Any suspicious TRADEs?  : (regime barely passed, volume marginal, etc.)
+Daily SMA50 blocks      : (how many signals blocked by new filter?)
+
+PART 3 — SYSTEM HEALTH (10 min)
+----------------------------------
+Circuit breaker trips   :
+OCO failures/fallbacks  :
+Fetch errors (ERR lines):
+Closure auto-detections : (/checkclosures found any fills automatically?)
+Any [ERR] unexplained   :
+
+SUMMARY NOTE
+----------------------------------
+(1-3 sentences. What happened this week, what the system did, anything to watch.)
+
+
+====================================================================================
