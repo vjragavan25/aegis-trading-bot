@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 BINANCE_REST    = "https://demo-api.binance.com/api/v3"
 AEGIS_SERVER    = "http://localhost:8888"
 SCAN_INTERVAL   = 60 * 15
-WATCHLIST       = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+WATCHLIST       = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT"]
 
 # ─────────────────────────────────────────────
 # LOG FILE — written alongside this script
@@ -474,6 +474,26 @@ def main():
 
     _rotate_old_logs()
     log(f"Bot started — logging to {_bot_log_path()}", "OK")
+
+    # Gap detection — warn if bot was offline for more than one scan cycle
+    try:
+        import csv as _csv
+        _sig_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'aegis_signals.csv')
+        if os.path.isfile(_sig_file):
+            with open(_sig_file, 'r', encoding='utf-8') as _f:
+                _rows = [r for r in _csv.reader(_f) if r and r[0] != 'timestamp']
+            if _rows:
+                _last_ts = datetime.strptime(_rows[-1][0], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                _now = datetime.now(timezone.utc)
+                _gap_min = int((_now - _last_ts).total_seconds() / 60)
+                if _gap_min > 20:
+                    _missed = _gap_min // 15
+                    log(f"Bot was offline from {_last_ts.strftime('%Y-%m-%d %H:%M')} UTC to "
+                        f"{_now.strftime('%Y-%m-%d %H:%M')} UTC "
+                        f"({_gap_min // 60}h {_gap_min % 60}m, ~{_missed} missed scan cycles)", "WARN")
+    except Exception:
+        pass
+
     log("Checking Aegis server...", "INFO")
     status = fetch(f"{AEGIS_SERVER}/status")
     if not status:

@@ -152,6 +152,24 @@ class TestRoundToStep(unittest.TestCase):
         result = self.srv.round_to_step(net, 0.0001, "0.00010000")
         self.assertEqual(result, 0.1435)
 
+    def test_bnb_lot_step_rounds_down(self):
+        """BNB lot_step=0.001 — 3 decimal places (stepSize from exchangeInfo 2026-06-22)."""
+        result = self.srv.round_to_step(10.5678, 0.001, "0.00100000")
+        self.assertEqual(result, 10.567)
+        self.assertLessEqual(result, 10.5678)
+
+    def test_xrp_lot_step_rounds_down(self):
+        """XRP lot_step=0.1 — 1 decimal place (stepSize from exchangeInfo 2026-06-22)."""
+        result = self.srv.round_to_step(123.456, 0.1, "0.10000000")
+        self.assertEqual(result, 123.4)
+        self.assertLessEqual(result, 123.456)
+
+    def test_ada_lot_step_rounds_down(self):
+        """ADA lot_step=0.1 — 1 decimal place (stepSize from exchangeInfo 2026-06-22)."""
+        result = self.srv.round_to_step(500.789, 0.1, "0.10000000")
+        self.assertEqual(result, 500.7)
+        self.assertLessEqual(result, 500.789)
+
 
 class TestFeeAdjustedQuantity(unittest.TestCase):
     """
@@ -230,6 +248,44 @@ class TestFeeAdjustedQuantity(unittest.TestCase):
                     base = symbol[:-len(quote)]
                     break
             self.assertEqual(base, expected_base, f"Failed for {symbol}")
+
+    def test_bnb_fee_in_bnb(self):
+        """BNBUSDT buy: USDT stripped to BNB, fee deducted, rounded to lot_step=0.001."""
+        symbol = "BNBUSDT"
+        base_asset = symbol
+        for quote in ("USDT", "USDC", "BUSD", "FDUSD", "BTC", "ETH"):
+            if symbol.endswith(quote) and len(symbol) > len(quote):
+                base_asset = symbol[:-len(quote)]
+                break
+        self.assertEqual(base_asset, "BNB")
+        executed = 5.678
+        fills = [{"commission": "0.005678", "commissionAsset": "BNB"}]
+        base_fee = sum(float(f["commission"]) for f in fills
+                       if f["commissionAsset"] == base_asset)
+        net = executed - base_fee  # 5.672322
+        result = self.srv.round_to_step(net, 0.001, "0.00100000")
+        self.assertEqual(result, 5.672)
+        self.assertLessEqual(result, net)
+        self.assertLess(result, executed)
+
+    def test_xrp_fee_in_xrp(self):
+        """XRPUSDT buy: USDT stripped to XRP, fee deducted, rounded to lot_step=0.1."""
+        symbol = "XRPUSDT"
+        base_asset = symbol
+        for quote in ("USDT", "USDC", "BUSD", "FDUSD", "BTC", "ETH"):
+            if symbol.endswith(quote) and len(symbol) > len(quote):
+                base_asset = symbol[:-len(quote)]
+                break
+        self.assertEqual(base_asset, "XRP")
+        executed = 100.5
+        fills = [{"commission": "0.1005", "commissionAsset": "XRP"}]
+        base_fee = sum(float(f["commission"]) for f in fills
+                       if f["commissionAsset"] == base_asset)
+        net = executed - base_fee  # 100.3995
+        result = self.srv.round_to_step(net, 0.1, "0.10000000")
+        self.assertEqual(result, 100.3)
+        self.assertLessEqual(result, net)
+        self.assertLess(result, executed)
 
 
 class TestPositionSizeCap(unittest.TestCase):

@@ -7,7 +7,13 @@
       "PowerShell(Test-Path *)",
       "PowerShell(Invoke-RestMethod -Uri \"http://localhost:8888/balance\" | ConvertTo-Json -Depth 5)",
       "PowerShell(git push *)",
-      "PowerShell($env:PATH += \";C:\\\\Program Files\\\\Git\\\\cmd\"; cd \"C:\\\\Users\\\\Vijay\\\\Downloads\\\\AI Analyst\\\\Run\"; git remote -v)"
+      "PowerShell($env:PATH += \";C:\\\\Program Files\\\\Git\\\\cmd\"; cd \"C:\\\\Users\\\\Vijay\\\\Downloads\\\\AI Analyst\\\\Run\"; git remote -v)",
+      "WebFetch(domain:api.binance.com)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(cd \"C:\\\\Users\\\\Vijay\\\\Downloads\\\\AI Analyst\\\\Run\"; $env:PYTHONIOENCODING = \"utf-8\"; python aegis_bot.py 2>&1 | Select-Object -First 80 | Out-String)",
+      "PowerShell(Get-Process *)",
+      "Bash(python test_aegis.py)",
+      "Bash(git add *)"
     ]
   }
 }

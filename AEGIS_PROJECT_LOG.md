@@ -1,7 +1,7 @@
 # AEGIS PROJECT LOG
 **Living memory document — upload this file at the start of any new chat to restore full context.**
 
-Last updated: 2026-06-18 14:30 UTC
+Last updated: 2026-06-22 UTC (Claude Code Session 2)
 
 ---
 
@@ -11,7 +11,7 @@ Last updated: 2026-06-18 14:30 UTC
 
 **Owner:** Vijay
 **Environment:** Windows, Python 3.14.5, folder `C:\Users\Vijay\Downloads\AI Analyst\Run\`
-**Status as of last update:** SYSTEM OPERATIONAL. 8-condition entry gate deployed and live. 56 tests passing. Backtest Run #2 complete (315 trades, 24 months, +0.269R expectancy). Psychology Protocol written. Daily SMA50 filter live. No open positions. Circuit breaker clear. See "SESSION CLOSE-OUT (2026-06-18)" for the most recent state.
+**Status as of last update:** SYSTEM OPERATIONAL. Watchlist expanded to 6 assets (added BNBUSDT, XRPUSDT, ADAUSDT). 65 tests passing. SQLite live. Git/GitHub clean. No open positions. Circuit breaker clear. See "SESSION CLOSE-OUT (2026-06-22 — Claude Code Session 2)" for the most recent state.
 
 **CRITICAL FIX APPLIED (2026-06-15):** Binance migrated their Demo Trading API to a new domain.
 All REST_BASE/BINANCE_REST values updated from the old testnet domain to the new official
@@ -546,33 +546,222 @@ Even if gate metrics met before that date, no live trading before Aug 12.
 
 ---
 
+## SESSION CLOSE-OUT (2026-06-21/22 — Claude Code Session 1) — READ THIS FIRST
+
+This supersedes the Jun-18 close-out. Previous close-outs kept below for history.
+This session was the first use of Claude Code (CLI) as the implementation tool.
+
+---
+
+### WHAT CLAUDE CODE DID (Session 1)
+
+#### 1. SQLite migration — primary trade store
+`aegis.db` (SQLite) now replaces `aegis_trades.csv` as the live data store.
+`aegis_trades.csv` is kept as a read-only backup, auto-refreshed on every write.
+
+New functions/constants added to `aegis_server.py`:
+- `TRADE_FIELDNAMES` — 25-column schema constant
+- `_to_db_val()` — converts empty strings to NULL for DB storage
+- `init_db()` — creates trades table on first run, idempotent
+- `migrate_csv_to_db()` — one-time import of existing CSV into DB (called at startup)
+- `export_trades_csv()` — writes all DB rows to CSV as backup after every write
+
+Functions replaced in `aegis_server.py`:
+- `write_trade_csv()` → INSERT OR IGNORE into DB + CSV export
+- `rewrite_trade_csv_row()` → UPDATE by order_id + CSV export
+- `get_open_trade_rows()` → SELECT WHERE status IN ('open','degraded')
+- `hydrate_state_from_csv()` → `hydrate_state_from_db()` — reads from DB
+- `check_open_trades()` — all_closed stats now read from DB
+- `/tradesdata` endpoint — reads from DB instead of CSV
+- `main()` — calls init_db(), migrate_csv_to_db(), hydrate_state_from_db()
+
+5 historical trades from `aegis_trades.csv` successfully migrated into `aegis.db`.
+
+#### 2. Test suite: 56 → 60 tests, all passing
+- `TestCsvSchemaMigration` replaced with `TestDbWrite` (5 new SQLite tests):
+  - test_write_inserts_row
+  - test_write_duplicate_ignored
+  - test_rewrite_updates_closure_fields
+  - test_rewrite_missing_order_id_returns_false
+  - test_get_open_trade_rows_filters_correctly
+- `TestStateHydration` updated: `_write_temp_csv` → `_write_temp_db`,
+  `hydrate_state_from_csv` → `hydrate_state_from_db`
+- Windows SQLite file lock issue handled: `gc.collect()` before `os.unlink()`
+- Unicode fix: final print statement in test runner now uses `sys.stdout.buffer`
+  to avoid CP1252 crash on the ✓ checkmark character
+
+#### 3. Git + GitHub setup (bonus — not originally requested)
+- Git 2.54.0 installed via winget
+- GitHub CLI 2.65.0 installed via winget
+- Git repo initialised in Run folder
+- `.gitignore` created: excludes logs, CSVs, __pycache__, backtest output, secrets
+- Private GitHub repo created: `github.com/vjragavan25/aegis-trading-bot`
+- Clean history — no secrets in any commit
+
+#### 4. Secrets management (CRITICAL CHANGE)
+- `aegis_secrets.py` created in Run folder (gitignored, never committed)
+  Contains: BINANCE_API_KEY, BINANCE_SECRET_KEY, ANTHROPIC_API_KEY,
+  TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+- `aegis_server.py`: hardcoded keys replaced with `from aegis_secrets import ...`
+- `aegis_ai.py`: same pattern applied
+- Git history rewritten via orphan branch to remove any prior key exposure
+- Force pushed clean history to GitHub
+- **ANTHROPIC_API_KEY ROTATED** — old key revoked at console.anthropic.com.
+  New key is live in `aegis_secrets.py` only.
+
+**IMPORTANT:** If `aegis_secrets.py` is ever deleted or missing, the server and
+AI module will fail to import keys. Never delete this file. Never commit it.
+It is the single source of truth for all credentials.
+
+---
+
+### CURRENT STATE (accurate as of 2026-06-22)
+
+- Account: ~$9,995.86 (USDT $4,995.86 + USDC $5,000.00)
+- Server: running, all fixes live, hydration from DB on startup
+- Bot: running, 8-condition gate, all assets WAIT (sideways market)
+- Circuit breaker: CLEAR, no open positions
+- aegis.db: live, 5 trades migrated, all writes go here first
+- aegis_trades.csv: backup export, auto-refreshed on every DB write
+- Tests: 60/60 passing
+- Git: initialised, GitHub repo private and clean
+- Anthropic API key: rotated, new key in aegis_secrets.py only
+
+---
+
+### FILES CHANGED THIS SESSION
+
+| File | Change |
+|---|---|
+| `aegis_server.py` | SQLite migration, secrets import |
+| `aegis_ai.py` | Secrets import |
+| `test_aegis.py` | 60 tests (was 56), SQLite test classes, Unicode fix |
+| `CLAUDE.md` | NEW — Claude Code session context |
+| `aegis_secrets.py` | NEW — all API keys (gitignored) |
+| `.gitignore` | NEW — excludes secrets, logs, CSVs, cache |
+| `aegis.db` | NEW — SQLite trade database |
+| `claude_code_session_1.txt` | NEW — session summary |
+
+---
+
+### STILL PENDING
+
+- P1: /checkclosures auto-detection not yet validated on a real OCO fill
+- P2: Weekly signal-log review (aegis_weekly_reviews.txt — first Sunday)
+- P2: Funding rate filter (parked — geo-blocked, needs VPN)
+- P3: Expand watchlist to 10 assets (after 30 OCO-driven trades)
+
+---
+
+### BUGS FIXED — CUMULATIVE (all sessions)
+
+| # | Bug | Fix | Session |
+|---|---|---|---|
+| 1 | Symbol mismatch | verify ticker symbol matches | Jun-15 |
+| 2 | Price sanity check missing | cross-check ticker vs 1H kline | Jun-15 |
+| 3 | Position value cap missing | MAX_POSITION_VALUE_PCT=5% | Jun-15 |
+| 4 | Unprotected position not detected | CB trip on SL/TP failure | Jun-15 |
+| 5 | OCO not implemented | POST /orderList/oco | Jun-15 |
+| 6 | Fee-adjusted quantity | net_qty = executedQty - base_fee | Jun-15 |
+| 7 | CSV schema mismatch | auto-migration in write_trade_csv | Jun-16 |
+| 8 | State lost on restart | hydrate_state_from_db() at startup | Jun-17 |
+| 9 | Hardcoded secrets in source | aegis_secrets.py + key rotation | Jun-21 |
+
+---
+
+## SESSION CLOSE-OUT (2026-06-22 — Claude Code Session 2)
+
+---
+
+### WHAT CLAUDE CODE DID (Session 2)
+
+#### 1. Watchlist expanded: 3 → 6 assets
+`aegis_bot.py` WATCHLIST updated:
+- Before: `["BTCUSDT", "ETHUSDT", "SOLUSDT"]`
+- After:  `["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT"]`
+
+Exchange filter values verified live from Binance API:
+
+| Symbol | stepSize | tickSize | minNotional |
+|---|---|---|---|
+| BNBUSDT | 0.001 | 0.01 | $5.00 |
+| XRPUSDT | 0.1 | 0.0001 | $5.00 |
+| ADAUSDT | 0.1 | 0.0001 | $5.00 |
+
+Server's `get_lot_size_step()` and `get_tick_size()` fetch these live per symbol —
+no server changes needed. All new assets handled automatically.
+
+#### 2. Test suite: 60 → 65 tests, all passing
+5 new tests added to `test_aegis.py`:
+- `TestRoundToStep`: test_bnb_lot_step_rounds_down, test_xrp_lot_step_rounds_down,
+  test_ada_lot_step_rounds_down — all verify result never exceeds input
+- `TestFeeAdjustedQuantity`: test_bnb_fee_in_bnb, test_xrp_fee_in_xrp —
+  verify base asset extraction and net_qty calculation for new symbols
+
+#### Constraints respected
+- No entry gate changes
+- No scoring logic changes
+- No server changes
+- Smoke test confirmed: all 6 assets scanned cleanly on first cycle
+
+---
+
+### CURRENT STATE (accurate as of 2026-06-22)
+
+- Watchlist: BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT (6 assets)
+- Server: running, circuit breaker clear, no open positions
+- Bot: running, 8-condition gate, scanning 6 assets every 15 min
+- Tests: 65/65 passing
+- aegis.db: intact, state hydrated on startup
+- Market: broadly bearish/sideways — all 6 assets expected to WAIT
+
+---
+
+### FILES CHANGED THIS SESSION
+
+| File | Change |
+|---|---|
+| `aegis_bot.py` | WATCHLIST: 3 → 6 assets |
+| `test_aegis.py` | 65 tests (was 60), 5 new lot-step and fee tests |
+| `claude_code_session_1.txt` | Session 2 summary appended |
+
+---
+
+### PENDING
+
+- P1: /checkclosures auto-detection not yet validated on a real OCO fill
+- P2: Weekly signal-log review — next Sunday 2026-06-29
+- P2: Funding rate filter (parked — geo-blocked, needs VPN)
+- P3: Expand to 10 assets after 30 closed trades (currently 6/10)
+
+---
+
 ## 2. SYSTEM ARCHITECTURE (current state)
 
 ### Files in the Run folder
 | File | Role | Status |
 |---|---|---|
-| `aegis_server.py` | Local signing bridge, port 8888, ThreadingHTTPServer | ✅ All 8 bugs fixed |
-| `aegis_bot.py` | 8-condition scanner, 15-min cycles, daily SMA filter | ✅ Stable |
-| `aegis_ai.py` | Claude API reasoning + Telegram alerts | ✅ Working (Telegram geo-blocked) |
-| `aegis_journal.html` | Browser dashboard — trades, signals, events | ✅ Working |
-| `aegis_backtest.py` | Standalone historical backtester Run #1 | ✅ Run #1 complete |
-| `aegis_backtest_v2.py` | Extended backtester Run #2 (24mo) | ✅ Run #2 complete |
-| `test_aegis.py` | 56-test suite — run before every deploy | ✅ All passing |
-| `AEGIS_PSYCHOLOGY_PROTOCOL.md` | 5-rule operator discipline document | ✅ Written |
-| `PARKED_IDEA_Loop_Execution.md` | Parked brainstorm — reopen by name only | Parked |
+| `aegis_server.py` | Local signing bridge, port 8888 | ✅ SQLite migration done, bugs #1-#9 fixed |
+| `aegis_bot.py` | 8-condition scanner, 15-min cycles | ✅ Daily SMA filter, file logging |
+| `aegis_ai.py` | Claude API reasoning + Telegram | ✅ Secrets from aegis_secrets.py |
+| `aegis_secrets.py` | All API credentials — GITIGNORED | ✅ Never commit, never delete |
+| `aegis_journal.html` | Browser dashboard | ✅ Working |
+| `aegis_backtest.py` | Backtester Run #1 | ✅ Complete |
+| `aegis_backtest_v2.py` | Backtester Run #2 (24mo) | ✅ Complete |
+| `test_aegis.py` | 60-test suite — run before every deploy | ✅ All passing |
+| `CLAUDE.md` | Claude Code session context | ✅ Auto-generated by Claude Code |
+| `AEGIS_PSYCHOLOGY_PROTOCOL.md` | 5-rule operator discipline doc | ✅ Written |
+| `PARKED_IDEA_Loop_Execution.md` | Parked brainstorm | Parked |
+| `.gitignore` | Git exclusions (secrets, logs, CSVs) | ✅ Active |
 
-### Auto-generated log files (created at runtime)
-- `aegis_events.txt` — server activity log (every log() call from server)
-- `aegis_bot_YYYY-MM-DD.log` — bot activity log, rotates daily, 7-day retention
-- `aegis_signals.csv` — every 15-min scan result (all assets, all cycles)
-- `aegis_trades.csv` — 5 closed/reconciled trade records, 25-column schema
-- `aegis_ai_briefs.txt` — hourly + morning AI market briefs
-- `aegis_ai_log.json` — AI trade commentary log
-- `aegis_backtest_report.txt` — backtest summary (run #1)
-- `aegis_backtest_trades.csv` — 148 simulated trades from run #1
-- `aegis_backtest_v2_report.txt` — backtest summary (run #2, 315 trades)
-- `aegis_backtest_v2_trades.csv` — 315 simulated trades from run #2
-- `aegis_weekly_reviews.txt` — Sunday review notes (to be created)
+### Auto-generated / runtime files
+- `aegis.db` — SQLite trade database (PRIMARY store)
+- `aegis_events.txt` — server activity log
+- `aegis_bot_YYYY-MM-DD.log` — bot daily log, rotates, 7-day retention
+- `aegis_signals.csv` — every 15-min scan result
+- `aegis_trades.csv` — backup export, auto-refreshed from DB on every write
+- `aegis_ai_briefs.txt` — AI market briefs
+- `aegis_weekly_reviews.txt` — Sunday review notes
 
 ---
 
@@ -605,8 +794,8 @@ Reference: https://developers.binance.com/docs/binance-spot-api-docs/demo-mode/g
 
 ## 3. CURRENT CONFIGURATION
 
-### Watchlist
-BTC/USDT, ETH/USDT, SOL/USDT (spot, Binance demo)
+### Watchlist (6 assets)
+BTC/USDT, ETH/USDT, SOL/USDT, BNB/USDT, XRP/USDT, ADA/USDT (spot, Binance demo)
 
 ### Entry gate (all 8 must pass simultaneously)
 **Bot-side (should_trade in aegis_bot.py):**
@@ -813,7 +1002,8 @@ Reset circuit breaker: http://localhost:8888/reset
 | 2026-06-18 | Test suite built: test_aegis.py, 56 tests across 9 test classes covering all critical logic. Found bug in write_trade_csv schema migration (missing from fix8 version) during testing. All 56 passing on Windows. Confirmed running: python test_aegis.py before every deploy. |
 | 2026-06-18 | Psychology Protocol written as standalone document AEGIS_PSYCHOLOGY_PROTOCOL.md. 5 rules: No Override, No Panic, Three-Loss Pause, Weekly Review, Live Gate Discipline. Grounded in this project's own incident history. |
 | 2026-06-18 | Backtest Run #2 complete: aegis_backtest_v2.py, 24 months (Jul 2024 – Jun 2026), 315 trades, +0.269R expectancy (vs +0.266R in Run #1 on 148 trades). Edge confirmed consistent. Key finding: Feb 2025 had 0% win rate (6 losses, price below daily SMA50 during correction despite other filters passing). |
-| 2026-06-18 | Daily SMA50 filter added as 8th entry gate condition. Daily klines fetch increased from 20 to 55 candles. Falls back to True when sma50_d unavailable. 3 new tests added (56 total). Directly addresses Feb 2025 backtest finding. |
+| 2026-06-21/22 | Claude Code Session 1. SQLite migration: aegis.db created, 5 functions replaced in aegis_server.py, 5 historical trades migrated. Test suite: 56→60 tests (TestDbWrite replaces TestCsvSchemaMigration, TestStateHydration updated). Git/GitHub: private repo created, .gitignore, clean history. Secrets management: aegis_secrets.py created, all hardcoded keys extracted from server and AI files. ANTHROPIC_API_KEY rotated — old key revoked. Unicode fix in test runner. Bug #9 closed. |
+| 2026-06-22 | Claude Code Session 2. Watchlist expanded 3→6 assets: added BNBUSDT (step=0.001), XRPUSDT (step=0.1), ADAUSDT (step=0.1). Exchange filters verified live. 5 new lot-step and fee tests added (65 total). Smoke test clean. No server/gate/scoring changes. |
 
 ---
 
