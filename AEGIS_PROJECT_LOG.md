@@ -669,6 +669,68 @@ It is the single source of truth for all credentials.
 
 ---
 
+## SESSION CLOSE-OUT (2026-06-24 — Claude Code Session 3)
+
+---
+
+### WHAT CLAUDE CODE DID (Session 3)
+
+#### 1. Startup gap detection (aegis_bot.py)
+On every bot restart, reads the last timestamp from `aegis_signals.csv` and logs
+a WARN if the gap exceeds 20 minutes (one scan cycle):
+`[WARN] Bot was offline from YYYY-MM-DD HH:MM UTC to HH:MM UTC (Xh Ym, ~N missed scan cycles)`
+Triggered by a power-off event (07:02–15:24 UTC gap on 2026-06-23, ~33 missed cycles).
+Silent no-op on fresh installs (no signals file yet) and normal restarts (<20 min gap).
+
+#### 2. Battery monitor — built then integrated into aegis_server.py
+Initially built as standalone `aegis_battery_monitor.py`, then moved into
+`aegis_server.py` as a daemon thread (user request — fewer terminals).
+- Checks battery every 5 minutes via `psutil`
+- **Low alert** (≤20%, discharging): Telegram "plug in charger" + remaining time estimate
+- **High alert** (≥80%, charging): Telegram "safe to unplug"
+- Hysteresis: low re-arms above 25%, high re-arms below 75% — one alert per event, no spam
+- `psutil` installed (v7.2.2). Starts automatically with server, dies cleanly on Ctrl+C.
+- Startup banner shows: `✓ Battery monitor active (alerts at <= 20% or >= 80%)`
+- `aegis_battery_monitor.py` left in repo but no longer needed.
+
+#### 3. Commits this session
+| Hash | Change |
+|---|---|
+| aaa0f26 | Watchlist 3→6 assets, gap detection, 65 tests (Sessions 2+3 combined) |
+| 798d5cd | aegis_battery_monitor.py (standalone, superseded) |
+| b4aa9c6 | Battery monitor moved into aegis_server.py as daemon thread |
+
+---
+
+### CURRENT STATE (accurate as of 2026-06-24)
+
+- Account: ~$9,995 estimated — verify with /balance
+- Server: running, battery monitor active, circuit breaker clear, no open positions
+- Bot: running, 8-condition gate, 6 assets, gap detection active
+- Tests: 65/65 passing
+- Market: bearish/recovering — all assets Bearish/Weak bull, 0/3 TF, no trade imminent
+
+---
+
+### FILES CHANGED THIS SESSION
+
+| File | Change |
+|---|---|
+| `aegis_bot.py` | Startup gap detection (>20 min offline → WARN log) |
+| `aegis_server.py` | Battery monitor daemon thread + psutil import + threading import |
+| `aegis_battery_monitor.py` | NEW — standalone version (superseded, kept for reference) |
+
+---
+
+### PENDING (unchanged from Session 2)
+
+- P1: /checkclosures auto-detection not yet validated on a real OCO fill
+- P2: Weekly signal-log review — next Sunday 2026-06-29
+- P2: Funding rate filter (parked — geo-blocked, needs VPN)
+- P3: Expand to 10 assets after 30 closed trades (currently 6/10 on watchlist, 2/30 on trades)
+
+---
+
 ## SESSION CLOSE-OUT (2026-06-22 — Claude Code Session 2)
 
 ---
@@ -741,8 +803,8 @@ no server changes needed. All new assets handled automatically.
 ### Files in the Run folder
 | File | Role | Status |
 |---|---|---|
-| `aegis_server.py` | Local signing bridge, port 8888 | ✅ SQLite migration done, bugs #1-#9 fixed |
-| `aegis_bot.py` | 8-condition scanner, 15-min cycles | ✅ Daily SMA filter, file logging |
+| `aegis_server.py` | Local signing bridge, port 8888 | ✅ Battery monitor daemon thread added |
+| `aegis_bot.py` | 8-condition scanner, 15-min cycles | ✅ Gap detection on startup |
 | `aegis_ai.py` | Claude API reasoning + Telegram | ✅ Secrets from aegis_secrets.py |
 | `aegis_secrets.py` | All API credentials — GITIGNORED | ✅ Never commit, never delete |
 | `aegis_journal.html` | Browser dashboard | ✅ Working |
@@ -1004,6 +1066,7 @@ Reset circuit breaker: http://localhost:8888/reset
 | 2026-06-18 | Backtest Run #2 complete: aegis_backtest_v2.py, 24 months (Jul 2024 – Jun 2026), 315 trades, +0.269R expectancy (vs +0.266R in Run #1 on 148 trades). Edge confirmed consistent. Key finding: Feb 2025 had 0% win rate (6 losses, price below daily SMA50 during correction despite other filters passing). |
 | 2026-06-21/22 | Claude Code Session 1. SQLite migration: aegis.db created, 5 functions replaced in aegis_server.py, 5 historical trades migrated. Test suite: 56→60 tests (TestDbWrite replaces TestCsvSchemaMigration, TestStateHydration updated). Git/GitHub: private repo created, .gitignore, clean history. Secrets management: aegis_secrets.py created, all hardcoded keys extracted from server and AI files. ANTHROPIC_API_KEY rotated — old key revoked. Unicode fix in test runner. Bug #9 closed. |
 | 2026-06-22 | Claude Code Session 2. Watchlist expanded 3→6 assets: added BNBUSDT (step=0.001), XRPUSDT (step=0.1), ADAUSDT (step=0.1). Exchange filters verified live. 5 new lot-step and fee tests added (65 total). Smoke test clean. No server/gate/scoring changes. |
+| 2026-06-23/24 | Claude Code Session 3. Added startup gap detection to aegis_bot.py (logs WARN if offline >20 min). Built battery monitor (psutil): Telegram alert at <=20% discharging and >=80% charging, integrated as daemon thread in aegis_server.py. psutil 7.2.2 installed. Commits: aaa0f26, 798d5cd, b4aa9c6. |
 
 ---
 
