@@ -19,11 +19,17 @@ import sqlite3
 import hashlib
 import time
 import json
+import threading
 import urllib.parse
 import urllib.request
 import urllib.error
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from datetime import datetime, timezone
+
+try:
+    import psutil as _psutil
+except ImportError:
+    _psutil = None
 
 # ─────────────────────────────────────────────
 # CONFIGURATION — paste your Demo API keys here
@@ -1325,6 +1331,80 @@ def hydrate_state_from_db():
 
 
 # ─────────────────────────────────────────────
+# BATTERY MONITOR
+# ─────────────────────────────────────────────
+_BATTERY_LOW_THRESHOLD  = 20   # alert when discharging at or below this %
+_BATTERY_HIGH_THRESHOLD = 80   # alert when charging at or above this %
+_BATTERY_LOW_RESET_AT   = 25   # re-arm low alert once battery climbs above this
+_BATTERY_HIGH_RESET_AT  = 75   # re-arm high alert once battery drops below this
+_BATTERY_CHECK_INTERVAL = 300  # seconds between checks
+
+
+def _send_telegram_direct(message: str):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+    try:
+        body = json.dumps({"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "HTML"}).encode()
+        req  = urllib.request.Request(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data=body, headers={"Content-Type": "application/json"}, method="POST"
+        )
+        urllib.request.urlopen(req, timeout=10)
+    except Exception:
+        pass
+
+
+def _battery_monitor_loop():
+    if _psutil is None:
+        log("Battery monitor disabled — psutil not installed (pip install psutil)", "WARN")
+        return
+
+    low_alert_sent  = False
+    high_alert_sent = False
+
+    while True:
+        try:
+            b = _psutil.sensors_battery()
+            if b is not None:
+                pct     = round(b.percent, 1)
+                plugged = b.power_plugged
+
+                # Low battery — discharging and at or below threshold
+                if not plugged and pct <= _BATTERY_LOW_THRESHOLD and not low_alert_sent:
+                    secsleft = b.secsleft
+                    time_str = ""
+                    if secsleft and secsleft > 0:
+                        h, m = divmod(secsleft // 60, 60)
+                        time_str = f" (~{h}h {m}m remaining)" if h else f" (~{m}m remaining)"
+                    msg = (f"🔋 <b>AEGIS — Low Battery</b>\n"
+                           f"Battery at <b>{pct}%</b> and discharging{time_str}.\n"
+                           f"Please plug in the charger to keep Aegis running.")
+                    _send_telegram_direct(msg)
+                    log(f"Battery low alert sent ({pct}%, discharging)", "WARN")
+                    low_alert_sent = True
+
+                if pct > _BATTERY_LOW_RESET_AT:
+                    low_alert_sent = False
+
+                # High battery — charging and at or above threshold
+                if plugged and pct >= _BATTERY_HIGH_THRESHOLD and not high_alert_sent:
+                    msg = (f"🔌 <b>AEGIS — Battery Charged</b>\n"
+                           f"Battery at <b>{pct}%</b>.\n"
+                           f"Safe to unplug the charger to protect battery life.")
+                    _send_telegram_direct(msg)
+                    log(f"Battery high alert sent ({pct}%, charging)", "OK")
+                    high_alert_sent = True
+
+                if pct < _BATTERY_HIGH_RESET_AT:
+                    high_alert_sent = False
+
+        except Exception:
+            pass
+
+        time.sleep(_BATTERY_CHECK_INTERVAL)
+
+
+# ─────────────────────────────────────────────
 # STARTUP
 # ─────────────────────────────────────────────
 def main():
@@ -1362,6 +1442,12 @@ def main():
     init_db()
     migrate_csv_to_db()
     hydrate_state_from_db()
+
+    # Start battery monitor as background daemon thread
+    bat_thread = threading.Thread(target=_battery_monitor_loop, daemon=True, name="battery-monitor")
+    bat_thread.start()
+    bat_label = f"<= {_BATTERY_LOW_THRESHOLD}% or >= {_BATTERY_HIGH_THRESHOLD}%"
+    print(f"  ✓ Battery monitor active (alerts at {bat_label})\n")
 
     server = ThreadingHTTPServer(("localhost", SERVER_PORT), AegisHandler)
     server.socket.settimeout(30)  # 30s timeout — no hung connections
