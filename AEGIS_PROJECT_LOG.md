@@ -1,7 +1,7 @@
 # AEGIS PROJECT LOG
 **Living memory document — upload this file at the start of any new chat to restore full context.**
 
-Last updated: 2026-06-22 UTC (Claude Code Session 2)
+Last updated: 2026-06-25 UTC (Claude Code Session 4)
 
 ---
 
@@ -666,6 +666,76 @@ It is the single source of truth for all credentials.
 | 7 | CSV schema mismatch | auto-migration in write_trade_csv | Jun-16 |
 | 8 | State lost on restart | hydrate_state_from_db() at startup | Jun-17 |
 | 9 | Hardcoded secrets in source | aegis_secrets.py + key rotation | Jun-21 |
+| 10 | result column NULL for manual closes | set LOSS/WIN/WIN in aegis.db for trades #1-#3 | Jun-25 |
+
+---
+
+## SESSION CLOSE-OUT (2026-06-25 — Claude Code Session 4)
+
+---
+
+### WHAT CLAUDE CODE DID (Session 4)
+
+#### 1. Full project status report
+Generated `project_status_2026-06-25.txt` from live data sources:
+- `/balance` and `/status` endpoints: account $9,995.86 (USDT $4,995.86 + USDC $5,000), CB clear, 0 open positions
+- `aegis.db`: 5 trades, net -$0.55, 2 OCO-driven, 2/30 live readiness gate progress
+- `aegis_signals.csv`: 2,890 signal rows since Jun-16 across 482 scan cycles — only 2 TRADE signals fired (0.07%), 2,888 WAITs
+- `aegis_bot_2026-06-25.log`: 52 scan cycles completed, 0 errors, 8 AI anomaly warnings, 0 CB events, 3h 23m offline gap (13:00–16:24 UTC)
+
+Signal analysis since Jun-16:
+- Regime distribution: Sideways 37.7%, Bearish 34.3%, Weak Bull 15.7%, Strong Bull 12.3% — 72% unfavourable
+- Top individual fail conditions: risk_score 99.3%, opp_score 96.9%, volume_ratio 90.4%, conf_score 87.4%, daily_trend 85.1%
+- All 8 entry conditions failing simultaneously on nearly every scan — gate working correctly in a bearish market
+
+#### 2. DB result column fix (Bug #10)
+Trades #1–#3 in `aegis.db` had `result = NULL` because they were closed manually (no WIN/LOSS ever written). This caused live readiness win-rate to show 0/2 = 0% despite 2 economically profitable closes.
+
+Fixed by setting result based on realised PnL:
+- Trade #1 (BTCUSDT, -$0.11): → `LOSS`
+- Trade #2 (BTCUSDT, +$0.68): → `WIN`
+- Trade #3 (ETHUSDT, +$12.00): → `WIN`
+
+Corrected stats: **2W / 3L, 40% win rate** across 5 trades.
+
+#### 3. Git upstream set and pushed
+First push to GitHub from Claude Code. Set `origin/master` as upstream:
+```
+git push --set-upstream origin master
+```
+Committed: `234cac5` — aegis.db + project_status_2026-06-25.txt
+Future `git push` now works without flags.
+
+---
+
+### CURRENT STATE (accurate as of 2026-06-25 22:00 UTC)
+
+- Account: $4,995.86 USDT + $5,000 USDC = ~$9,995.86 total
+- Server: running, CB clear, 0 open positions, 0 trades today
+- Bot: running (restarted 16:24 UTC after 3h 23m offline gap), 6 assets, all WAIT
+- Circuit breaker: CLEAR
+- aegis.db: 5 trades, all result-tagged correctly (2W/3L)
+- Market: broadly bearish/sideways — all 8 gate conditions failing across all 6 assets
+- Git: upstream set, clean push to github.com/vjragavan25/aegis-trading-bot
+
+---
+
+### FILES CHANGED THIS SESSION
+
+| File | Change |
+|---|---|
+| `aegis.db` | result column set for trades #1–#3 (NULL → LOSS/WIN/WIN) |
+| `project_status_2026-06-25.txt` | NEW — full status report generated from live data |
+| `AEGIS_PROJECT_LOG.md` | This update |
+
+---
+
+### PENDING (unchanged from Session 3)
+
+- P1: /checkclosures auto-detection not yet validated on a real OCO fill
+- P2: Weekly signal-log review — next Sunday 2026-06-29
+- P2: Funding rate filter (parked — geo-blocked, needs VPN)
+- P3: Expand to 10 assets after 30 closed trades (currently 6/10 watchlist, 2/30 OCO trades)
 
 ---
 
@@ -1067,6 +1137,7 @@ Reset circuit breaker: http://localhost:8888/reset
 | 2026-06-21/22 | Claude Code Session 1. SQLite migration: aegis.db created, 5 functions replaced in aegis_server.py, 5 historical trades migrated. Test suite: 56→60 tests (TestDbWrite replaces TestCsvSchemaMigration, TestStateHydration updated). Git/GitHub: private repo created, .gitignore, clean history. Secrets management: aegis_secrets.py created, all hardcoded keys extracted from server and AI files. ANTHROPIC_API_KEY rotated — old key revoked. Unicode fix in test runner. Bug #9 closed. |
 | 2026-06-22 | Claude Code Session 2. Watchlist expanded 3→6 assets: added BNBUSDT (step=0.001), XRPUSDT (step=0.1), ADAUSDT (step=0.1). Exchange filters verified live. 5 new lot-step and fee tests added (65 total). Smoke test clean. No server/gate/scoring changes. |
 | 2026-06-23/24 | Claude Code Session 3. Added startup gap detection to aegis_bot.py (logs WARN if offline >20 min). Built battery monitor (psutil): Telegram alert at <=20% discharging and >=80% charging, integrated as daemon thread in aegis_server.py. psutil 7.2.2 installed. Commits: aaa0f26, 798d5cd, b4aa9c6. |
+| 2026-06-25 | Claude Code Session 4. Full project status report generated (project_status_2026-06-25.txt): account $9,995.86, CB clear, 0 open positions. Signal analysis since Jun-16: 2/2890 TRADE signals (0.07%), market 72% bearish/sideways, all 8 gate conditions failing simultaneously. Bug #10 fixed: result column for trades #1-#3 set in aegis.db (NULL → LOSS/WIN/WIN), correcting win rate to 40% (2W/3L). Git upstream set to origin/master and pushed (234cac5). |
 
 ---
 
