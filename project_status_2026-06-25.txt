@@ -1,0 +1,215 @@
+================================================================================
+AEGIS PROJECT STATUS REPORT
+Generated: 2026-06-25
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. ACCOUNT BALANCE  (source: GET /balance)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  USDT (trading wallet)  :  $4,995.86   free  /  $0.00 locked
+  USDC (reserve)         :  $5,000.00   free  /  $0.00 locked
+  BTC                    :  0.00000577  (dust — ~$0.00)
+  ETH                    :  0.00018810  (dust — ~$0.00)
+
+  Effective tradeable    :  $4,995.86 USDT
+  Total account value    :  ~$9,995.86
+  Net PnL vs start       :  -$4.14 on USDT side (fees + -$0.55 net trading PnL)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. SYSTEM STATUS  (source: GET /status)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Server status          :  RUNNING
+  Circuit breaker        :  CLEAR (OK)
+  Open positions         :  0
+  Trades today           :  0
+  Daily PnL              :  $0.00
+  Server uptime since    :  2026-06-25 16:22:59 UTC
+  Last signal            :  None
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. TRADE SUMMARY  (source: aegis.db — trades table)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Total trades recorded  :  5
+  OCO-driven trades      :  2  (Jun-16 ETH trades — both had valid orderListId)
+  Manually closed trades :  3  (Jun-14/15 BTC + Jun-15 ETH — status: closed_manual)
+
+  --- By result column (formal tag) ---
+  LOSS                   :  2  (OCO/SL triggered — Jun-16 ETH x2)
+  None / untagged        :  3  (closed_manual — no WIN/LOSS written to result col)
+  WIN                    :  0
+
+  --- By PnL (economic reality) ---
+  Profitable trades      :  2  (+$0.68 BTC Jun-15, +$12.00 ETH Jun-15)
+  Loss / breakeven       :  3  (-$0.11 BTC Jun-14, -$6.80 ETH Jun-16, -$6.32 ETH Jun-16)
+  Win rate (by PnL)      :  40%  (2 of 5)
+
+  --- PnL breakdown ---
+  Gross wins             :  +$12.68
+  Gross losses           :  -$13.23
+  Net PnL                :  -$0.55
+
+  --- By symbol ---
+  BTCUSDT                :  2 trades  |  net +$0.57
+  ETHUSDT                :  3 trades  |  net -$1.12
+
+  --- Trade log ---
+  #1  2026-06-14  BTCUSDT  BUY  0.03038 @ $65,722.85  exit $65,785.99  PnL -$0.11  RR -0.002  closed_manual
+  #2  2026-06-15  BTCUSDT  BUY  0.00381 @ $65,555.49  exit $65,799.99  PnL +$0.68  RR +0.11   closed_manual
+  #3  2026-06-15  ETHUSDT  BUY  0.1435  @ $1,741.24   exit $1,827.47   PnL +$12.00 RR +1.81   closed_manual
+  #4  2026-06-16  ETHUSDT  BUY  0.1368  @ $1,827.91   exit $1,780.00   PnL -$6.80  RR -1.07   closed_sl  LOSS  OCO:3037277
+  #5  2026-06-16  ETHUSDT  BUY  0.1310  @ $1,813.82   exit $1,767.34   PnL -$6.32  RR -1.04   closed_sl  LOSS  OCO:3037383
+
+  ⚠ ATTENTION: Trades #1-#3 have no WIN/LOSS result tag. They were closed manually
+    and the result column was never written. If these are considered in live readiness
+    metrics, they will appear as 0 wins. Recommend a manual DB update to set
+    result='WIN' for trades #2 and #3, and result='LOSS' for #1.
+
+  --- Live readiness gate progress ---
+  Required: 30+ OCO-driven closed trades
+  Current:  2 of 30  (6.7% complete)
+  Required win rate: 55%+  |  Current (tagged only): 0% (0/2)  |  By PnL: 40% (2/5)
+  Required R:R: 2:1+       |  Current avg (all 5): +0.17R  (skewed by manual closes)
+  Max drawdown: <15%       |  Not formally tracked yet — below threshold by inspection
+  60-day moratorium expires: 2026-08-12
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. SIGNAL SUMMARY  (source: aegis_signals.csv — since 2026-06-16)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Total signal rows      :  3,376 all-time  /  2,890 since Jun-16
+  Scan cycles (Jun-16+)  :  ~482  (2,890 rows ÷ 6 assets)
+
+  --- Verdict distribution (since Jun-16) ---
+  WAIT                   :  2,888  (99.93%)
+  TRADE                  :  2      (0.07%)
+
+  Only 2 TRADE signals fired since Jun-16 — both were the Jun-16 ETH entries
+  that hit SL. The market has been in sustained bearish/sideways regime since.
+
+  --- Regime distribution (since Jun-16, all 2,890 signal rows) ---
+  Sideways               :  1,089  (37.7%)
+  Bearish                :  990    (34.3%)
+  Weak bull              :  454    (15.7%)
+  Strong bull            :  357    (12.3%)
+
+  Combined non-tradeable (Sideways + Bearish):  72.0%
+  Combined tradeable     (Strong bull only):    12.3%
+
+  Note: regime_quality gate requires "Strong bull". Only 357 of 2,890 per-asset
+  signal rows met even this single condition. Market has spent 10 of the last
+  ~11 days in unfavourable regime.
+
+  --- Top WAIT reasons (% of 2,888 WAIT signals, Jun-16+) ---
+  risk_score             :  2,871  (99.3%)  ← near-universal blocker
+  opp_score              :  2,800  (96.9%)
+  volume_ratio           :  2,613  (90.4%)
+  conf_score             :  2,527  (87.4%)
+  daily_trend            :  2,458  (85.1%)  ← SMA50 filter added after backtest
+  regime_consistency     :  2,406  (83.3%)
+  regime_quality         :  2,397  (82.9%)
+  tf_bullish             :  1,976  (68.4%)
+
+  All 8 conditions are failing simultaneously on the vast majority of scans.
+  This is expected in a bearish/sideways market — the gate is working as intended.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. BOT LOG SUMMARY  (source: aegis_bot_2026-06-25.log)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Log file size          :  1,123 lines
+  Scan cycles today      :  52 completed
+    - 00:05 UTC: resumed from prior day at cycle #127 (bot was running overnight)
+    - 13:00 UTC: bot went offline (unplanned shutdown)
+    - 16:24 UTC: bot restarted, counter reset to cycle #1
+    - Gap: 3h 23m offline, ~13 missed scan cycles
+    - Post-restart cycles: limited (log ends at ~22:00)
+
+  Errors (ERR)           :  0
+  Warnings (WARN)        :  8  — all from AI anomaly monitor, no system errors
+
+  Circuit breaker events :  0  (clear all day)
+  Trades opened          :  0
+  Trades today           :  0
+
+  --- AI anomaly alerts (all 8 warnings, informational only) ---
+  00:21  ADA TF:1/3 + volume surge vs. all others at 0/3 — divergence noted
+  02:25  ADA persistent TF:1/3, XRP volume spike with no signal correlation
+  04:29  ADA highest opp score (39) + 1/3 TF but volume suppressed; BTC/ETH scores dropped
+  06:33  SOL volume spike (0.43x → 0.60x) with flat scores; all pairs at TF:1/3
+  08:37  Volume rising across all pairs but no TF confirmation upgrade; XRP/SOL +70%+ vol
+
+  These are monitoring notes from aegis_ai.py — no trading action warranted.
+
+  --- Offline gap ---
+  WARN  Bot was offline 2026-06-25 13:00 UTC → 16:24 UTC (3h 23m, ~13 missed cycles)
+  Cause: unknown (likely manual stop or machine sleep). Server continued running.
+  Impact: no trades were missed (market in WAIT conditions all day).
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. FILE INVENTORY  (source: Run\ directory)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Last Modified        Size (bytes)  Filename
+  ──────────────────── ────────────  ────────────────────────────────────────
+  2026-06-25 22:00          11,071  aegis_events.txt
+  2026-06-25 21:55         261,971  aegis_ai_briefs.txt
+  2026-06-25 21:55         110,025  aegis_bot_2026-06-25.log
+  2026-06-25 21:54         552,067  aegis_signals.csv
+  2026-06-25 05:20         193,544  aegis_bot_2026-06-24.log
+  2026-06-24 14:56          60,144  AEGIS_PROJECT_LOG.md
+  2026-06-24 14:46          64,666  aegis_server.py
+  2026-06-24 14:41           3,724  aegis_battery_monitor.py
+  2026-06-24 05:19         129,977  aegis_bot_2026-06-23.log
+  2026-06-23 21:01          23,371  aegis_bot.py
+  2026-06-23 05:18         256,590  aegis_bot_2026-06-22.log
+  2026-06-22 13:36           6,665  claude_code_session_1.txt
+  2026-06-22 11:40           3,812  claude_code_session_2.txt
+  2026-06-22 11:24          41,034  test_aegis.py
+  2026-06-22 08:36           6,002  aegis_weekly_reviews_22_06_2026.txt
+  2026-06-22 05:23          36,152  aegis_bot_2026-06-21.log
+  2026-06-22 00:15          16,384  aegis.db
+  2026-06-22 00:01             518  aegis_secrets.py
+  2026-06-21 23:56             372  .gitignore
+  2026-06-21 23:55          17,950  aegis_ai.py
+  2026-06-21 23:02           6,588  CLAUDE.md
+  2026-06-21 21:03          33,987  aegis_backtest_v2_trades.csv
+  2026-06-21 21:03           4,060  aegis_backtest_v2_report.txt
+  2026-06-20 08:07           1,649  aegis_weekly_reviews.txt
+  2026-06-18 13:09          23,710  aegis_backtest_v2.py
+  2026-06-17 22:46          10,575  AEGIS_PSYCHOLOGY_PROTOCOL.md
+  2026-06-16 20:36             968  aegis_trades.csv
+  2026-06-16 18:24           7,805  aegis_ai_log.json
+  2026-06-15 04:56           7,332  diagnose_api.py
+  2026-06-14 03:59          13,102  aegis_backtest_trades.csv
+  2026-06-14 03:59           1,473  aegis_backtest_report.txt
+  2026-06-14 03:56          19,448  aegis_backtest.py
+  2026-06-13 09:48           5,841  test_telegram.py
+  2026-06-11 08:54          23,719  aegis_journal.html
+
+  Note: aegis_trades.csv (Jun-16) is a legacy file superseded by aegis.db (Jun-22).
+  aegis.db is now the authoritative trade record per the Jun-21 migration.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  System health          :  GOOD — no errors, CB clear, server running
+  Market conditions      :  POOR — 72% bearish/sideways regime since Jun-16
+  Trading activity       :  MINIMAL — 2 TRADE signals / 482 scan cycles since Jun-16
+  Live readiness         :  EARLY — 2/30 required OCO trades (6.7%)
+  Action item            :  Tag trades #1-#3 in aegis.db with correct result values
+                            (WIN/LOSS) so live readiness metrics are accurate.
+
+================================================================================
+END OF REPORT
+================================================================================
