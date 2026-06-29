@@ -1443,11 +1443,11 @@ def main():
     migrate_csv_to_db()
     hydrate_state_from_db()
 
-    # Start battery monitor as background daemon thread
-    bat_thread = threading.Thread(target=_battery_monitor_loop, daemon=True, name="battery-monitor")
-    bat_thread.start()
-    bat_label = f"<= {_BATTERY_LOW_THRESHOLD}% or >= {_BATTERY_HIGH_THRESHOLD}%"
-    print(f"  ✓ Battery monitor active (alerts at {bat_label})\n")
+    # Battery monitor disabled — handled by Windows system settings
+    # bat_thread = threading.Thread(target=_battery_monitor_loop, daemon=True, name="battery-monitor")
+    # bat_thread.start()
+    # bat_label = f"<= {_BATTERY_LOW_THRESHOLD}% or >= {_BATTERY_HIGH_THRESHOLD}%"
+    # print(f"  ✓ Battery monitor active (alerts at {bat_label})\n")
 
     server = ThreadingHTTPServer(("localhost", SERVER_PORT), AegisHandler)
     server.socket.settimeout(30)  # 30s timeout — no hung connections

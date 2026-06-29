@@ -119,3 +119,42 @@ Do not move to live trading before: 30+ closed OCO-driven trades, 55%+ win rate,
 ## Session Continuity
 
 Upload `AEGIS_PROJECT_LOG.md` at the start of each new chat session — it contains the full incident history, all bugs fixed, and current system state.
+
+---
+
+## Token Optimization — Always On
+
+Token efficiency is a first-class priority in every response. This applies to the entire session without exception.
+
+### Response rules
+
+**Code**
+- Write complete, working code. No placeholders.
+- On edits, show only changed lines with minimal surrounding context.
+- Comments only when logic is genuinely non-obvious.
+
+**Explanations**
+- Lead with the answer. No preamble, no closing summary.
+- Never start with "Sure!", "Great!", "Certainly!", or any filler opener.
+- Cut any sentence that restates what was just said.
+
+**Clarifications**
+- State your assumption and proceed when something is ambiguous.
+- One clarifying question max, only when ambiguity would cause wrong output.
+
+**Errors & debugging**
+- Root cause in one sentence. Show the fix. Skip the walkthrough unless asked.
+
+**Repetition**
+- Never restate the user's question.
+- Never repeat code or decisions already established in this session.
+
+### Before every response, check:
+- Can this be shorter without losing meaning? → Shorten it.
+- Is this sentence adding new information? → If not, cut it.
+- Is this code already in context? → Do not rewrite it.
+
+### Exceptions — always be thorough for:
+- Security or data-loss risks
+- Explicitly requested detailed explanations
+- User-facing documentation or README files

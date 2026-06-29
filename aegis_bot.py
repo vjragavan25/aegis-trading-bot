@@ -366,11 +366,11 @@ def scan_cycle(cycle_num):
         signals["failed"] = list(failed)
         results.append({**signals, "verdict": action, "passed": list(passed), "failed": list(failed)})
 
-        # AI reasoning for high-scoring setups (score >= 60)
-        if signals["opp_score"] >= 60:
-            log(f"  AI reasoning {symbol}...", "INFO")
-            reasoning = aegis_ai.reason_about_signal(signals)
-            log(f"  AI: {reasoning[:180]}{'...' if len(reasoning)>180 else ''}", "INFO")
+        # AI commentary disabled — re-enable when API credits available
+        # if signals["opp_score"] >= 60:
+        #     log(f"  AI reasoning {symbol}...", "INFO")
+        #     reasoning = aegis_ai.reason_about_signal(signals)
+        #     log(f"  AI: {reasoning[:180]}{'...' if len(reasoning)>180 else ''}", "INFO")
 
         if verdict:
             if best_signal is None or signals["opp_score"] > best_signal["opp_score"]:
@@ -402,12 +402,11 @@ def scan_cycle(cycle_num):
             if trade_result:
                 if trade_result.get("status") == "success":
                     log(f"Trade placed successfully: {trade_result.get('order',{}).get('id')}", "OK")
-                    # AI commentary on the trade
-                    trade_data = {**best_signal, "entry": price, "stop": stop, "target": target}
-                    commentary = aegis_ai.comment_on_trade(trade_data)
-                    log(f"AI trade commentary: {commentary[:200]}", "INFO")
-                    # Telegram alert
-                    aegis_ai.alert_trade_fired(trade_data, commentary)
+                    # AI commentary disabled — re-enable when API credits available
+                    # trade_data = {**best_signal, "entry": price, "stop": stop, "target": target}
+                    # commentary = aegis_ai.comment_on_trade(trade_data)
+                    # log(f"AI trade commentary: {commentary[:200]}", "INFO")
+                    # aegis_ai.alert_trade_fired(trade_data, commentary)
                 else:
                     log(f"Trade failed: {trade_result.get('message','unknown')}", "ERR")
         else:
@@ -416,22 +415,22 @@ def scan_cycle(cycle_num):
     else:
         log(f"No entry signals this cycle. Watching {len(WATCHLIST)} assets.", "INFO")
 
-    # Generate AI cycle brief every N cycles
-    if results and _cycle_count_total % aegis_ai.BRIEF_EVERY_N_CYCLES == 0:
-        log("Generating AI market brief...", "INFO")
-        brief = aegis_ai.generate_cycle_brief(results, cycle_num)
-        log(f"AI Brief: {brief[:200]}{'...' if len(brief)>200 else ''}", "INFO")
+    # AI commentary disabled — re-enable when API credits available
+    # if results and _cycle_count_total % aegis_ai.BRIEF_EVERY_N_CYCLES == 0:
+    #     log("Generating AI market brief...", "INFO")
+    #     brief = aegis_ai.generate_cycle_brief(results, cycle_num)
+    #     log(f"AI Brief: {brief[:200]}{'...' if len(brief)>200 else ''}", "INFO")
 
-    # Morning brief — once per day after 06:00 UTC
-    from datetime import timezone as tz
-    now_utc = datetime.now(tz.utc).replace(tzinfo=None)
-    today = now_utc.date()
-    if now_utc.hour >= 6 and _last_morning_brief_date != today and results:
-        _last_morning_brief_date = today
-        log("Generating morning brief...", "INFO")
-        brief = aegis_ai.generate_morning_brief(results)
-        log(f"Morning brief: {brief[:200]}{'...' if len(brief)>200 else ''}", "INFO")
-        aegis_ai.alert_morning_brief(brief)
+    # AI commentary disabled — re-enable when API credits available
+    # from datetime import timezone as tz
+    # now_utc = datetime.now(tz.utc).replace(tzinfo=None)
+    # today = now_utc.date()
+    # if now_utc.hour >= 6 and _last_morning_brief_date != today and results:
+    #     _last_morning_brief_date = today
+    #     log("Generating morning brief...", "INFO")
+    #     brief = aegis_ai.generate_morning_brief(results)
+    #     log(f"Morning brief: {brief[:200]}{'...' if len(brief)>200 else ''}", "INFO")
+    #     aegis_ai.alert_morning_brief(brief)
 
     # Anomaly detection every 8 cycles (every 2 hours)
     if _cycle_count_total % 8 == 0:
