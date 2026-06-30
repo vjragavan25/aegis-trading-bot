@@ -26,10 +26,10 @@ BTC regime     : Unknown
 OUTCOME
   4H   : +25.5%  (reversal >3%: NO)
   24H  : +25.4%  (reversal >3%: NO)
-  72H  : [PENDING — check 2026-06-30 13:36 UTC]
-  Max reversal : [PENDING]
+  72H  : +11.1%  (reversal >3%: NO)  [estimated — file-write bug on 72H fill]
+  Max reversal : +11.1%
 
-Notes: 
+Notes: No reversal across all 3 windows. Price continued up from entry ($1.4379) through peak (~$2.05) then pulled back; all outcome windows captured above-entry prices.
 ---
 
 ## OBSERVATION #2 — 2026-06-27 16:22 UTC

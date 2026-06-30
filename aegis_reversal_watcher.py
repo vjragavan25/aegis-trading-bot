@@ -476,7 +476,7 @@ def write_observation(obs_id, symbol, asset, signals, sig_count, rsi,
 
 def _update_outcome_line(lines, obs_id, label, pct, note=None):
     header  = f"## OBSERVATION #{obs_id} "
-    pad_map = {"4H": "   ", "24H": "  ", "72H": " "}
+    pad_map = {"4H": "   ", "24H": "  ", "72H": "  "}
     padding = pad_map.get(label, " ")
     target  = f"  {label}{padding}: [PENDING"
     pct_str = f"+{pct:.1f}%" if pct >= 0 else f"{pct:.1f}%"
