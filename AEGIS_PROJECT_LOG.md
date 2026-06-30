@@ -1,7 +1,7 @@
 # AEGIS PROJECT LOG
 **Living memory document — upload this file at the start of any new chat to restore full context.**
 
-Last updated: 2026-06-28 UTC (Claude Code Sessions 5-6)
+Last updated: 2026-06-29 UTC (Weekly Review #2)
 
 ---
 
@@ -11,7 +11,7 @@ Last updated: 2026-06-28 UTC (Claude Code Sessions 5-6)
 
 **Owner:** Vijay
 **Environment:** Windows, Python 3.14.5, folder `C:\Users\Vijay\Downloads\AI Analyst\Run\`
-**Status as of last update:** SYSTEM OPERATIONAL. Reversal watcher live (dynamic top-5, 2 observations logged). AI commentary disabled, anomaly detection kept. Battery monitor disabled. BRIDGE.md protocol established. 3 terminals running. See "SESSION CLOSE-OUT (2026-06-27/28 — Claude Code Sessions 5-6)" for most recent state.
+**Status as of last update:** SYSTEM OPERATIONAL. Reversal watcher v2 live (two-speed scanning, ATR gate, support break confirmation, 5 observations). AI commentary disabled. Battery monitor disabled. BRIDGE.md protocol active. Weekly Review #2 complete. 0 TRADE signals this week — market 100% below daily SMA50. See "SESSION CLOSE-OUT (2026-06-29 — Weekly Review #2)" for most recent state.
 
 **CRITICAL FIX APPLIED (2026-06-15):** Binance migrated their Demo Trading API to a new domain.
 All REST_BASE/BINANCE_REST values updated from the old testnet domain to the new official
@@ -670,132 +670,6 @@ It is the single source of truth for all credentials.
 
 ---
 
-## SESSION CLOSE-OUT (2026-06-27/28 — Claude Code Sessions 5-6) — READ THIS FIRST
-
-This supersedes Session 4. Previous close-outs kept below for history.
-
----
-
-### WHAT WAS BUILT (Sessions 5-6, 2026-06-27/28)
-
-#### 1. BRIDGE.md communication protocol established
-A shared logbook between Claude Chat and Claude Code with timestamped,
-status-tagged entries. Format: `[YYYY-MM-DD HH:MM UTC | Direction | Status]`.
-Status tags: `[PENDING]` / `[DONE]`. Claude Code reads bottom-up for latest
-PENDING request. Replaces ad-hoc file uploads for implementation work.
-Standard prompt to Claude Code: `read BRIDGE.md and act accordingly`.
-File location: `Run\BRIDGE.md` — grows with each exchange, full history preserved.
-
-#### 2. Reversal Short Engine — Observation Phase built
-`aegis_reversal_watcher.py` — standalone observation-only module.
-Runs as Terminal 3, completely isolated from spot system.
-
-**Architecture:**
-- Dynamic discovery every cycle: fetches full Binance futures market,
-  filters to top 5 gainers (min $50M volume, USDT pairs, excludes stablecoins)
-- Pump gate: 24h gain > +8%
-- Reversal signals (need 2/4): RSI(1H) crosses below 70, volume declining
-  2+ consecutive candles near highs, funding rate > +0.06%, 1H close below SMA20
-- Entry-triggered tracking: observation logged to `aegis_reversal_observations.md`,
-  state persisted in `aegis_reversal_state.json`
-- Duplicate suppression: one observation per asset per 72h window
-- Outcome tracking: 4H/24H/72H outcomes filled automatically each cycle
-- Offline recovery: state.json survives restarts, offline outcomes filled
-  with "estimated — watcher was offline" tag
-- fapi fallback: futures-only assets (no spot pair) fall back to
-  `fapi.binance.com/fapi/v1/klines` and `fapi/v1/ticker` for full data
-
-**Upgrades made during sessions:**
-- Fixed "Data incomplete" for futures-only assets (VELVETUSDT, MYXUSDT)
-  — two-step fallback: spot ticker → fapi ticker, spot klines → fapi klines
-- Dynamic top-5 replaced fixed 5-asset watchlist
-- Rolling 24h window with entry-triggered 72h tracking
-
-**Design document:** `PARKED_IDEA_Reversal_Short_Engine.md`
-
-#### 3. First observations logged
-`aegis_reversal_observations.md` — 2 entries as of 2026-06-28:
-
-| # | Asset | Entry | Gain | Signals | 4H Outcome |
-|---|---|---|---|---|---|
-| 1 | VELVETUSDT | $1.4379 | +130% | vol↓ + funding 0.07% | Pending |
-| 2 | WIFUSDT | $0.1772 | +19.9% | RSI cross + vol↓ | -4.6% ✅ |
-
-Observation #2 first completed data point: -4.6% within 4H of signal.
-Reversal mechanism working as designed. N=1, not statistically meaningful yet.
-Target: 30-50 observations before strategy review.
-
-#### 4. AI commentary disabled (aegis_bot.py)
-Per-cycle AI calls commented out — not deleted:
-- `reason_about_signal()` — disabled
-- `comment_on_trade()` — disabled
-- `alert_trade_fired()` — disabled
-- `generate_cycle_brief()` — disabled
-- `generate_morning_brief()` + `alert_morning_brief()` — disabled
-
-**Kept active:**
-- `detect_anomalies()` — runs every 8 cycles (every 2 hours), Telegram alert on findings
-- `import aegis_ai` — kept, re-enable by uncommenting when API credits available
-
-Reason: Anthropic API credits exhausted. AI commentary adds no decision value
-to a deterministic entry gate. Anomaly detection flagged genuine market events
-(volume collapse, cross-asset divergences) — worth keeping.
-
-#### 5. Battery monitor disabled (aegis_server.py)
-`_battery_monitor_loop()` daemon thread commented out in `aegis_server.py`.
-Power management now handled by Windows system settings.
-`aegis_battery_monitor.py` file kept in Run folder for reference, not running.
-Server startup no longer shows "Battery monitor active".
-
----
-
-### CURRENT STATE (accurate as of 2026-06-28)
-
-- Account: ~$9,995.86 (unchanged — no trades)
-- Server: running, CB clear, 0 open positions, battery monitor disabled
-- Bot: running, 6 assets, all WAIT, no AI commentary, anomaly detection active
-- Reversal watcher: running (Terminal 3), dynamic top-5, 2 observations open
-- Tests: 65/65 passing (unchanged)
-- Market: broadly bearish/sideways — all 6 spot assets failing all 8 gate conditions
-- Reversal watcher top-5 today: VELVETUSDT, RAVEUSDT, SLXUSDT, REUSDT, PUMPUSDT
-
----
-
-### FILES CHANGED THIS SESSION
-
-| File | Change |
-|---|---|
-| `aegis_bot.py` | AI commentary disabled, anomaly detection kept |
-| `aegis_server.py` | Battery monitor thread commented out |
-| `aegis_reversal_watcher.py` | NEW — full observation module |
-| `aegis_reversal_observations.md` | NEW — 2 observations logged |
-| `aegis_reversal_state.json` | NEW — watcher state persistence |
-| `BRIDGE.md` | NEW — Claude Chat ↔ Claude Code communication log |
-| `PARKED_IDEA_Reversal_Short_Engine.md` | NEW — strategy design document |
-
----
-
-### TERMINAL SETUP (3 processes)
-
-```
-Terminal 1: python aegis_server.py          ← spot trading server
-Terminal 2: python aegis_bot.py             ← spot scanner, 6 assets
-Terminal 3: python aegis_reversal_watcher.py ← observation only, no orders
-```
-
----
-
-### PENDING
-
-- P1: /checkclosures auto-detection not yet validated on a real OCO fill
-- P2: Weekly signal-log review — Sunday 2026-06-29
-- P2: Funding rate filter (parked — geo-blocked, needs VPN)
-- P2: Re-enable AI commentary when Anthropic API credits topped up
-- P3: Expand to 10 assets after 30 closed trades (6/10 watchlist, 2/30 OCO)
-- Research: accumulate 30-50 reversal observations before strategy review
-
----
-
 ## SESSION CLOSE-OUT (2026-06-25 — Claude Code Session 4)
 
 ---
@@ -991,6 +865,168 @@ no server changes needed. All new assets handled automatically.
 - P2: Weekly signal-log review — next Sunday 2026-06-29
 - P2: Funding rate filter (parked — geo-blocked, needs VPN)
 - P3: Expand to 10 assets after 30 closed trades (currently 6/10)
+
+---
+
+## SESSION CLOSE-OUT (2026-06-29 — Weekly Review #2) — READ THIS FIRST
+
+This supersedes all previous close-outs. History kept below for reference.
+
+---
+
+### WHAT WAS BUILT SINCE LAST LOG UPDATE (Jun 22 → Jun 29)
+
+#### Claude Code Session 3 — Reversal watcher v1 built
+- `aegis_reversal_watcher.py` created — standalone observation module
+- Fixed 5-asset watchlist (BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT)
+- First observations logged before v2 upgrade
+
+#### Claude Code Sessions 4-5 — Reversal watcher upgrades
+- Dynamic top-5 discovery (replaced fixed watchlist)
+- fapi fallback for futures-only assets (VELVETUSDT, MYXUSDT were invisible)
+- Entry-triggered 72h outcome tracking with duplicate suppression
+- BTC regime as fixed macro context asset (was always "Unknown")
+- VELVETUSDT outcomes fixed (spot ticker fallback to fapi in check_pending_outcomes)
+
+#### Claude Code Session 6 — Reversal watcher v2
+Full redesign based on VELVETUSDT chart analysis and calibration decisions:
+
+**Architecture: two-speed scanning**
+- Loop A (15min, background thread): discovery, top 3 gainers, BTC regime
+- Loop B (1min, main thread): watch-mode scanning for WATCH-state assets
+- threading.Lock protects shared watched_assets between loops
+
+**Stage 2A — ATR-based peak pullback gate:**
+- Track highest price since WATCH entry (not rolling window)
+- ATR(14) computed from 1H klines, refreshed each Loop B cycle
+- Gate: (tracked_peak - current_price) >= 1.5 × ATR14
+- Plus: RSI(14) declining vs 2 candles ago
+- Min 3 scans before peak considered established
+
+**Stage 2B — Support break confirmation:**
+- Find most-tested swing low in last 48 × 1H candles
+- Swing low: lower than 2 candles on each side
+- Minimum 2 touches within 0.5% to qualify as support
+- Break: 1H close < support × 0.99 AND volume > 1.5× 20-period avg
+- If no support qualifies: Stage 2A alone sufficient
+
+**State machine:** DISCOVERED → WATCHING → CONFIRMING → OBSERVED → CLOSED
+
+**Gain tier classification:** EXTREME (>50%), HIGH (20-50%), MODERATE (8-20%)
+
+**Updated observation template:** peak price, peak-to-entry %, ATR, support level
+
+#### BRIDGE.md communication protocol
+Shared logbook between Claude Chat and Claude Code.
+Format: `[YYYY-MM-DD HH:MM UTC | Direction | Status]`
+Status: `[PENDING]` / `[DONE]`
+Standard Claude Code prompt: `read BRIDGE.md and act accordingly`
+Location: `Run\BRIDGE.md` — full history of all Chat↔Code exchanges
+
+#### AI commentary disabled (aegis_bot.py)
+reason_about_signal, comment_on_trade, alert_trade_fired,
+generate_cycle_brief, generate_morning_brief all commented out.
+detect_anomalies() kept — runs every 8 cycles.
+Reason: API credits exhausted, commentary adds no decision value.
+NOTE: anomaly detection now generating ERR lines (108 today) from failed
+API calls — needs attention. Either top up credits or disable anomaly
+detection too.
+
+#### Battery monitor disabled (aegis_server.py)
+_battery_monitor_loop() daemon thread commented out.
+Windows system settings handle power management.
+
+---
+
+### WEEKLY REVIEW #2 SUMMARY (Jun 22-29)
+
+**Spot bot:**
+- 0 TRADE signals across 4,009 scan rows (6 assets × 7 days)
+- daily_trend blocked 100% of all WAITs — every scan blocked by SMA50 filter
+- Regime: Sideways 39%, Bearish 32%, Weak bull 23%, Strong bull 6%
+- Strong bull at 6% — down from 12% last week, market deteriorating
+- 75 scan cycles on Jun 29, perfect 15-min spacing, no gaps
+
+**Reversal watcher (5 observations, N=5 — not statistically meaningful):**
+
+| OBS | Asset | Gain | Tier | 4H | 24H | 72H |
+|---|---|---|---|---|---|---|
+| 1 | VELVETUSDT | +130% | EXTREME | +25.5% ❌ | +25.4% ❌ | Pending |
+| 2 | WIFUSDT | +19.9% | HIGH | -4.6% ✅ | -1.8% ❌ | Pending |
+| 3 | PIEVERSEUSDT | +16.6% | MODERATE | +0.4% ❌ | -3.7% ✅ | Pending |
+| 4 | RAVEUSDT | +32.7% | HIGH | +26.4% ❌ | Pending | Pending |
+| 5 | SLXUSDT | +21.2% | HIGH | -12.6% ✅ | Pending | Pending |
+
+Early patterns (N=5):
+- rsi_cross+vol_decline: 2/3 4H reversals — best signal combo so far
+- EXTREME tier: 0/1 reversals — signal fires too early on massive pumps
+- HIGH tier: 2/3 4H reversals — more promising
+- v2 watcher now addresses EXTREME tier issue via ATR gate + support break
+
+Currently watching (v2): TACUSDT (+174% EXTREME), UBUSDT (+37% HIGH),
+ORDIUSDT (+36% HIGH). All in WATCHING state, Stage 2A building.
+
+---
+
+### CURRENT STATE (accurate as of 2026-06-29 19:30 UTC)
+
+- Account: ~$9,995.86 (unchanged — no trades since Jun 16)
+- Server: running, CB clear, 0 open positions
+- Bot: running, 6 assets, 0 TRADE signals, AI commentary disabled
+- Reversal watcher: running (v2), Loop A+B active, 3 assets in WATCH
+- Tests: 65/65 passing
+- GitHub: committed through Session 6 (commit 7930bfb)
+- Market: deeply bearish — 100% daily_trend blocked, 6% Strong bull
+
+---
+
+### PENDING ACTIONS
+
+**Immediate:**
+- Anomaly detection ERR lines (108 today) — either top up Anthropic API
+  credits or disable detect_anomalies() entirely. Low urgency (non-fatal)
+  but creates log noise.
+- VELVETUSDT 72H outcome auto-fills today at 13:36 UTC — check observations
+
+**Ongoing:**
+- P1: /checkclosures auto-detection not yet validated (no OCO fills since Jun 16)
+- P2: Accumulate 30-50 reversal observations before strategy review
+- P2: Funding rate filter (parked — geo-blocked, needs VPN)
+- P3: Expand to 10 assets after 30 OCO-driven trades (6/10 watchlist, 2/30 OCO)
+- 60-day moratorium expires 2026-08-12
+
+---
+
+### TERMINAL SETUP (3 processes)
+
+```
+Terminal 1: python aegis_server.py              ← spot trading server
+Terminal 2: python aegis_bot.py                 ← spot scanner, 6 assets
+Terminal 3: python aegis_reversal_watcher.py    ← observation only, v2
+```
+
+---
+
+### FILES IN RUN FOLDER (current)
+
+| File | Role | Status |
+|---|---|---|
+| aegis_server.py | Signing bridge, port 8888 | All fixes, battery disabled |
+| aegis_bot.py | 6-asset scanner | AI commentary disabled |
+| aegis_ai.py | AI module | Imported but calls commented out |
+| aegis_secrets.py | All API credentials | GITIGNORED — never delete |
+| aegis_reversal_watcher.py | Reversal observation v2 | Two-speed, ATR, support |
+| test_aegis.py | 65-test suite | All passing |
+| CLAUDE.md | Claude Code context | Auto-maintained |
+| BRIDGE.md | Chat↔Code communication | Active protocol |
+| AEGIS_PROJECT_LOG.md | This file | Updated Jun 29 |
+| AEGIS_PSYCHOLOGY_PROTOCOL.md | 5-rule discipline doc | Active |
+| PARKED_IDEA_Reversal_Short_Engine.md | Strategy design | v2 implemented |
+| PARKED_IDEA_Loop_Execution.md | Parked | Reopen by name |
+| aegis_weekly_reviews.txt | Sunday reviews | Review #2 written |
+| aegis.db | SQLite trade database | PRIMARY store, 5 trades |
+| aegis_reversal_observations.md | Reversal log | 5 observations |
+| aegis_reversal_state.json | Watcher state | Persists across restarts |
 
 ---
 
@@ -1261,7 +1297,7 @@ Reset circuit breaker: http://localhost:8888/reset
 | 2026-06-18 | Psychology Protocol written as standalone document AEGIS_PSYCHOLOGY_PROTOCOL.md. 5 rules: No Override, No Panic, Three-Loss Pause, Weekly Review, Live Gate Discipline. Grounded in this project's own incident history. |
 | 2026-06-18 | Backtest Run #2 complete: aegis_backtest_v2.py, 24 months (Jul 2024 – Jun 2026), 315 trades, +0.269R expectancy (vs +0.266R in Run #1 on 148 trades). Edge confirmed consistent. Key finding: Feb 2025 had 0% win rate (6 losses, price below daily SMA50 during correction despite other filters passing). |
 | 2026-06-21/22 | Claude Code Session 1. SQLite migration: aegis.db created, 5 functions replaced in aegis_server.py, 5 historical trades migrated. Test suite: 56→60 tests (TestDbWrite replaces TestCsvSchemaMigration, TestStateHydration updated). Git/GitHub: private repo created, .gitignore, clean history. Secrets management: aegis_secrets.py created, all hardcoded keys extracted from server and AI files. ANTHROPIC_API_KEY rotated — old key revoked. Unicode fix in test runner. Bug #9 closed. |
-| 2026-06-27/28 | Claude Code Sessions 5-6. BRIDGE.md protocol established. Reversal watcher built: dynamic top-5 gainers, fapi fallback for futures-only assets, entry-triggered 72h outcome tracking, duplicate suppression. First 2 observations logged (VELVETUSDT +130%, WIFUSDT +19.9% — 4H outcome -4.6%). AI per-cycle commentary disabled (API credits exhausted), anomaly detection kept. Battery monitor disabled (Windows handles it). 3 terminals now running. |
+| 2026-06-22 | Claude Code Session 2. Watchlist expanded 3→6 assets: added BNBUSDT (step=0.001), XRPUSDT (step=0.1), ADAUSDT (step=0.1). Exchange filters verified live. 5 new lot-step and fee tests added (65 total). Smoke test clean. No server/gate/scoring changes. |
 | 2026-06-23/24 | Claude Code Session 3. Added startup gap detection to aegis_bot.py (logs WARN if offline >20 min). Built battery monitor (psutil): Telegram alert at <=20% discharging and >=80% charging, integrated as daemon thread in aegis_server.py. psutil 7.2.2 installed. Commits: aaa0f26, 798d5cd, b4aa9c6. |
 | 2026-06-25 | Claude Code Session 4. Full project status report generated (project_status_2026-06-25.txt): account $9,995.86, CB clear, 0 open positions. Signal analysis since Jun-16: 2/2890 TRADE signals (0.07%), market 72% bearish/sideways, all 8 gate conditions failing simultaneously. Bug #10 fixed: result column for trades #1-#3 set in aegis.db (NULL → LOSS/WIN/WIN), correcting win rate to 40% (2W/3L). Git upstream set to origin/master and pushed (234cac5). |
 

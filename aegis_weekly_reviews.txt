@@ -1,44 +1,94 @@
-AEGIS WEEKLY REVIEWS
-====================
-30-minute structured review every Sunday.
-Agenda defined in AEGIS_PSYCHOLOGY_PROTOCOL.md (Rule 4).
-Format: date, then three parts (Trade Outcomes / Signal Quality / System Health),
-then one-paragraph summary note. Keep it honest, keep it brief.
-
-Do NOT skip weeks even if nothing traded. "Nothing traded, market bearish,
-system held correctly" is a valid and useful entry.
 
 ====================================================================================
-REVIEW #1 — [DATE] UTC
+REVIEW #2 — 2026-06-29 (Sunday) UTC
 ====================================================================================
 
 PART 1 — TRADE OUTCOMES (10 min)
 ----------------------------------
-Trades this week        :
-OCO-driven exits        :
-Manual closes           :
-Rolling win rate        : (last 10 OCO-driven trades only)
-Gate metrics status     : Opp/Conf/Risk/Vol all within expected range? Y/N
+Trades this week        : 0 (no new spot trades)
+OCO-driven exits        : 0
+Manual closes           : 0
+Rolling win rate        : 0% (0W/2L — OCO-driven only, N=2, unchanged)
+Gate metrics status     : daily_trend blocked 100% of all WAITs this week.
+                          All 6 assets below daily SMA50 for the entire week.
+                          Zero TRADE signals fired across 4,009 scan rows.
+                          System correctly holding back in a weak market.
 
 PART 2 — SIGNAL QUALITY (10 min)
 ----------------------------------
-TRADE signals fired     :
-WAIT signals fired      :
-Most common WAIT reason :
-Any suspicious TRADEs?  : (regime barely passed, volume marginal, etc.)
-Daily SMA50 blocks      : (how many signals blocked by new filter?)
+TRADE signals fired     : 0 (out of 4,009 scans across 6 assets, Jun 22-29)
+WAIT signals fired      : 4,009 (100%)
+Most common WAIT reason : daily_trend — 100% of WAITs this week. Every single
+                          scan was blocked by the daily SMA50 filter. This is
+                          the most dominant filter in the current market.
+Regime distribution     : Sideways 39%, Bearish 32%, Weak bull 23%, Strong bull 6%
+                          Only 6% Strong bull — down from 12% last week.
+                          Market continuing to deteriorate in macro terms.
+Any suspicious TRADEs?  : N/A — no TRADE signals this week.
+New assets performance  : BNB, XRP, ADA added to watchlist (6 total). All 6
+                          showing identical WAIT pattern — no asset is close to
+                          qualifying. Watchlist expansion has not changed signal
+                          frequency in current conditions (market-wide weakness).
 
 PART 3 — SYSTEM HEALTH (10 min)
 ----------------------------------
-Circuit breaker trips   :
-OCO failures/fallbacks  :
-Fetch errors (ERR lines):
-Closure auto-detections : (/checkclosures found any fills automatically?)
-Any [ERR] unexplained   :
+Circuit breaker trips   : 0
+OCO failures/fallbacks  : 0
+Fetch errors (ERR)      : 108 ERR lines — ALL from AI Anomaly detection
+                          attempting Claude API calls with exhausted credits.
+                          These are non-fatal (anomaly module catches the error)
+                          but generate log noise. Action: disable anomaly
+                          detection or top up API credits.
+Closure auto-detections : 0 — no open trades to reconcile. P1 still unvalidated.
+Scan cycle timing       : 75 cycles on Jun 29, perfect 15-min spacing, no gaps.
+Major changes this week : Reversal watcher v2 built and deployed (see below).
+                          BRIDGE.md communication protocol established.
+                          AI commentary disabled. Battery monitor disabled.
+                          Reversal watcher upgraded: dynamic top-3, two-speed
+                          scanning (15min/1min), ATR-based Stage 2A, support
+                          break Stage 2B, gain tier classification, full state
+                          machine.
+
+REVERSAL WATCHER — WEEKLY SUMMARY
+----------------------------------
+Observations logged     : 5 (OBS #1-5)
+Outcomes available      : 8 of 15 total windows (some pending, some offline)
+
+Results by observation:
+  OBS#1 VELVETUSDT +130% (EXTREME): 4H +25.5% NO, 24H +25.4% NO, 72H pending
+  OBS#2 WIFUSDT    +19.9% (HIGH):   4H -4.6% YES, 24H -1.8% NO, 72H pending
+  OBS#3 PIEVERSEUSDT +16.6% (MOD):  4H +0.4% NO, 24H -3.7% YES, 72H pending
+  OBS#4 RAVEUSDT   +32.7% (HIGH):   4H +26.4% NO, 24H pending, 72H pending
+  OBS#5 SLXUSDT    +21.2% (HIGH):   4H -12.6% YES, 24H pending, 72H pending
+
+Early signal pattern (N=5, not statistically meaningful):
+  rsi_cross+vol_decline: 3 obs, 4H reversals 2/3 (67%) — best combo so far
+  funding+vol_decline:   1 obs, 4H reversals 0/1 (0%)  — EXTREME tier, no reversal
+  rsi_cross+sma_cross:   1 obs, 4H reversals 0/1 (0%)  — MODERATE tier
+
+By gain tier (4H reversals only):
+  EXTREME (>50%): 0/1 — signal fired too early, asset continued pumping
+  HIGH (20-50%):  2/3 — more promising, needs more data
+  MODERATE (<20%): 0/1 — small sample
+
+Key learning this week: VELVETUSDT (+130%) did not reverse at the v1 signal
+entry — continued up 25%+ before topping. Chart analysis (30m ChoCH, support
+break at $1.7679) confirmed the reversal WAS real but occurred 36-48h after
+the observation was logged. Signal fired too early. Led directly to v2
+architecture redesign: ATR-based peak pullback gate (Stage 2A) + support break
+confirmation (Stage 2B). v2 watcher now live with 3 assets in WATCH state:
+TACUSDT (+174%), UBUSDT (+37%), ORDIUSDT (+36%).
 
 SUMMARY NOTE
 ----------------------------------
-(1-3 sentences. What happened this week, what the system did, anything to watch.)
-
+Week 2 review. Spot bot: completely idle — 0 TRADE signals across 4,009 scans,
+100% daily_trend blocked, market deeply below SMA50. This is expected and
+correct. Reversal watcher had its most productive week — 5 observations, first
+real data on signal quality, and a critical calibration finding (EXTREME tier
+pumps fire too early) that drove a significant architecture upgrade. v2 watcher
+now live with two-speed scanning, ATR gate, and support break confirmation.
+Anomaly detection generating 108 ERR lines due to exhausted API credits —
+minor action item. Consecutive spot loss count: 2 (unchanged). Next OCO trade
+is the priority milestone.
 
 ====================================================================================

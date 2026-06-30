@@ -103,7 +103,7 @@ BTC regime     : Unknown
 
 OUTCOME
   4H   : +26.4%  (reversal >3%: NO)  [estimated — watcher was offline]
-  24H  : [PENDING — check 2026-06-30 02:30 UTC]
+  24H  : +5.7%  (reversal >3%: NO)
   72H  : [PENDING — check 2026-07-02 02:30 UTC]
   Max reversal : [PENDING]
 
@@ -129,10 +129,42 @@ BTC regime     : Unknown
 
 OUTCOME
   4H   : -12.6%  (reversal >3%: YES)  [estimated — watcher was offline]
-  24H  : [PENDING — check 2026-06-30 05:01 UTC]
+  24H  : -22.8%  (reversal >3%: YES)
   72H  : [PENDING — check 2026-07-02 05:01 UTC]
   Max reversal : [PENDING]
 
 Notes: 
+---
+
+## OBSERVATION #6 — 2026-06-30 02:18 UTC
+
+Asset          : UBUSDT
+Gain tier      : HIGH
+Entry price    : $0.1114  (price when observation logged)
+Peak price     : $0.1251  (tracked peak at observation time)
+Peak-to-entry  : -11.0%  (how far price had already fallen from peak)
+24h gain       : +36.7%
+24h volume     : $61M
+ATR(14) at entry: $0.0061
+Support level  : Not identified
+Support tests  : N/A
+
+Signals present:
+  [x] RSI(1H) crossed below 70  (RSI: 55.0)
+  [ ] Volume declining 2+ consecutive candles
+  [ ] Funding rate > +0.06%  (rate: 0.055%)
+  [x] 1H close below 20-period SMA
+  Signals count : 2/4
+
+BTC regime     : Sideways
+Market regime  : Sideways
+
+OUTCOME
+  4H   : +8.9%  (reversal >3%: NO)
+  24H  : [PENDING — check 2026-07-01 02:18 UTC]
+  72H  : [PENDING — check 2026-07-03 02:18 UTC]
+  Max reversal : [PENDING]
+
+Notes:
 ---
 

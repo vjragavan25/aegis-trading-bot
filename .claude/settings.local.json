@@ -13,7 +13,16 @@
       "PowerShell(cd \"C:\\\\Users\\\\Vijay\\\\Downloads\\\\AI Analyst\\\\Run\"; $env:PYTHONIOENCODING = \"utf-8\"; python aegis_bot.py 2>&1 | Select-Object -First 80 | Out-String)",
       "PowerShell(Get-Process *)",
       "Bash(python test_aegis.py)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(python -c \"import psutil; b = psutil.sensors_battery\\(\\); print\\(b\\)\")",
+      "Bash(pip install *)",
+      "Bash(python -c ' *)",
+      "Bash(curl *)",
+      "Bash(python -c \"import sys; sys.stdout.buffer.write\\(sys.stdin.buffer.read\\(\\)\\)\")",
+      "PowerShell(python \"C:\\\\Users\\\\Vijay\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Vijay-Downloads-AI-Analyst-Run\\\\c522ddfd-82f3-4c8b-89c0-bdefe5293e1d\\\\scratchpad\\\\diag.py\" 2>&1)",
+      "Bash(python -m py_compile aegis_reversal_watcher.py)"
     ]
   }
 }

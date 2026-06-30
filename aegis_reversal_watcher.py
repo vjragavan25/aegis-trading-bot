@@ -60,11 +60,13 @@ SUPPORT_BUFFER    = 0.99       # close must be < support × 0.99
 SUPPORT_VOL_MULT  = 1.5        # volume > 1.5× 20-period avg confirms break
 
 # Outcome tracking
-REVERSAL_THRESH  = 3.0
-OBS_COOLDOWN_SEC = 72 * 3600
-OUTCOME_4H       = 4  * 3600
-OUTCOME_24H      = 24 * 3600
-OUTCOME_72H      = 72 * 3600
+REVERSAL_THRESH    = 3.0
+OBS_COOLDOWN_SEC   = 72 * 3600
+OUTCOME_4H         = 4  * 3600
+OUTCOME_24H        = 24 * 3600
+OUTCOME_72H        = 72 * 3600
+WATCH_TIMEOUT_DAYS = 7
+WATCH_TIMEOUT_H    = WATCH_TIMEOUT_DAYS * 24
 
 SCRIPT_DIR        = os.path.dirname(os.path.abspath(__file__))
 OBSERVATIONS_FILE = os.path.join(SCRIPT_DIR, "aegis_reversal_observations.md")
@@ -383,6 +385,33 @@ def _ensure_file():
             f"---\n\n"
         )
 
+def _write_abandoned(symbol, asset):
+    """Log an asset to observations file when it exceeds the 7-day WATCH timeout."""
+    _ensure_file()
+    now_str    = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    gain       = asset.get("gain_at_discovery", 0)
+    entry      = asset.get("watch_entry_price", 0)
+    peak       = asset.get("tracked_peak", entry)
+    entry_time = asset.get("watch_entry_time", "unknown")
+    state_name = asset.get("state", "WATCHING")
+    scans      = asset.get("watch_scan_count", 0)
+    block = (
+        f"## ABANDONED — {symbol} ({now_str})\n\n"
+        f"Asset          : {symbol}\n"
+        f"Gain tier      : {gain_tier(gain)}\n"
+        f"Discovery gain : +{gain:.1f}%\n"
+        f"Watch entry    : {entry_time}  @ ${entry:.4f}\n"
+        f"Tracked peak   : ${peak:.4f}\n"
+        f"Final state    : {state_name}  (after {scans} 1-min scans)\n"
+        f"Abandoned      : {now_str}\n"
+        f"Reason         : Watched {WATCH_TIMEOUT_DAYS}+ days without completing Stage 2A/2B/3\n"
+        f"---\n\n"
+    )
+    with open(OBSERVATIONS_FILE, "a", encoding="utf-8") as f:
+        f.write(block)
+    log(f"ABANDONED: {symbol} — {WATCH_TIMEOUT_DAYS}-day limit reached, logged to observations", "OUT")
+
+
 def write_observation(obs_id, symbol, asset, signals, sig_count, rsi,
                       funding, regime, btc_regime):
     _ensure_file()
@@ -515,7 +544,7 @@ def check_pending_outcomes(state, startup=False):
                 continue
             ticker = fetch_ticker(obs["symbol"])
             if not ticker:
-                log(f"OBS #{obs['obs_id']} ({obs['symbol']}): ticker unavailable, retry next cycle", "WARN")
+                log(f"OBS #{obs['obs_id']} ({obs['symbol']}) {label}: ticker fetch failed — retry next cycle", "WARN")
                 continue
             curr_p        = float(ticker.get("lastPrice", entry_p))
             pct           = (curr_p - entry_p) / entry_p * 100
@@ -593,13 +622,11 @@ def _run_loop_a(state, btc_regime_cache):
             log(f"  {sym}: DISCOVERED -> WATCHING  entry=${entry_price:.4f}  "
                 f"gain={gain:+.1f}%  tier:{gain_tier(gain)}", "ST")
 
-    # Drop assets that fell out of top N for > 4 hours
+    # Drop assets: 7-day absolute timeout (any asset) or 4h if no longer in top N
     top_syms = {p["symbol"] for p in top}
     with _watch_lock:
         to_drop = []
         for sym, a in state["watched_assets"].items():
-            if sym in top_syms:
-                continue
             try:
                 watch_start = datetime.strptime(
                     a.get("watch_entry_time", ""), "%Y-%m-%d %H:%M UTC"
@@ -607,10 +634,15 @@ def _run_loop_a(state, btc_regime_cache):
                 age_h = (datetime.now(timezone.utc) - watch_start).total_seconds() / 3600
             except Exception:
                 age_h = 0
-            if age_h > 4:
-                to_drop.append(sym)
-        for sym in to_drop:
-            log(f"  {sym}: not in top {TOP_N} after 4h — WATCHING -> dropped", "ST")
+            if age_h >= WATCH_TIMEOUT_H:
+                to_drop.append((sym, "timeout", age_h))
+            elif sym not in top_syms and age_h > 4:
+                to_drop.append((sym, "dropped", age_h))
+        for sym, reason, age_h in to_drop:
+            if reason == "timeout":
+                _write_abandoned(sym, state["watched_assets"][sym])
+            else:
+                log(f"  {sym}: not in top {TOP_N} after 4h — WATCHING -> dropped", "ST")
             del state["watched_assets"][sym]
 
 # ── LOOP B — WATCH MODE (every 1 min, main thread) ────────────────────────────
